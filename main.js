@@ -41,20 +41,23 @@ scene.background = new THREE.CubeTextureLoader()
 
 
 let axis = "y";
-let ballYo = 20;
+let ballYo = 10;
 
 let ball = new ShapeGenerator("Sphere", [1, 32, 32], "Standard", {color: 0xFFFFFF});
 ball.position.y = ballYo;
+ball.position.x = -0;
 ball.castShadow = true;
 ball.createPhysics();
 ball.physics.config.collitionType = ball.physics.collitionTypes.Sphere;
+ball.physics.config.accelerationVector[0] = -0.1;
 scene.add(ball);
 
 let floor = new ShapeGenerator("Box", [10, 1, 10], "Standard", {color: 0xFF00000});
 floor.receiveShadow = true;
+floor.position.y = -0.5;
 scene.add(floor);
 
-console.log(floor);
+// console.log(floor);
 
 let wall1 = new ShapeGenerator("Box", [1, 10, 10], "Standard");
 wall1.receiveShadow = true;
@@ -69,13 +72,19 @@ scene.add(light);
 
 camera.position.z = 20;
 
+let playAnimation = false;
+
+let timeDivision = 100000;
+
 let t = 0;
 function animate(time, delta) {
 	requestAnimationFrame(animate);
 
-    t += 1/10000;
+    if(playAnimation){
+        t += 1/timeDivision;
 
-    ball.physics.move(t);
+        ball.physics.move(t);
+    }
 
     // console.log(ball.position);
 
@@ -83,6 +92,34 @@ function animate(time, delta) {
     controls.update();
 }
 animate();
+
+window.addEventListener("keydown", function(event){
+    switch (event.code) {
+        case "Space":
+            playAnimation = !playAnimation;
+        break;
+
+        case "ArrowLeft":
+            timeDivision *= 10;
+            // console.log(timeDivision);
+        break;
+
+        case "ArrowRight":
+            timeDivision /= 10;
+            // console.log(timeDivision);
+        break;
+
+        case "KeyR":
+            ball.position.y = ballYo
+            ball.physics.config.velocityVector[1] = 0;
+        break;
+    
+        default:
+            break;
+    }
+
+    // console.log(event.code);
+;})
 
 function createLight(color, intensity, position = {x: 0, y: 0, z: 0}){
     let light = new THREE.PointLight(color, intensity);
