@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import PhysicsSim from "./PhysicsSim.js";
 
 class ShapeGenerator extends THREE.Mesh{
     constructor(shape, data, materialType = "Basic", config = {color: 0x1EA5DC}){
@@ -6,32 +7,33 @@ class ShapeGenerator extends THREE.Mesh{
             new THREE[`${shape}Geometry`](...data),
             new THREE[`Mesh${materialType}Material`](config)
         );
-            
-        this.setCenter();
-        this.setMovementRadius();
-        this.setOrbitalSpeed();
+        this.shape = shape;
     }
 
-    setOrbitalSpeed(value = 1){
-        this.orbitalSpeed = value;
+    createPhysics(config){
+        this.physics = new PhysicsSim(this, config);
     }
 
-    setMovementRadius(radius = 10){
-        this.radius = radius;
-    }
+    // setOrbitalSpeed(value = 1){
+    //     this.orbitalSpeed = value;
+    // }
 
-    setCenter(center = {x: 0, y: 0}){
-        this.pivot = center;
-    }
+    // setMovementRadius(radius = 10){
+    //     this.radius = radius;
+    // }
 
-    rotate(t){
-        this.rotation.z = -t;
-    }
+    // setCenter(center = {x: 0, y: 0}){
+    //     this.pivot = center;
+    // }
 
-    orbitate(t){
-        this.position.x = this.pivot.x + this.radius*Math.sin(t*this.orbitalSpeed);
-        this.position.y = this.pivot.y + this.radius*Math.cos(t*this.orbitalSpeed);
-    }
+    // rotate(t){
+    //     this.rotation.z = -t;
+    // }
+
+    // orbitate(t){
+    //     this.position.x = this.pivot.x + this.radius*Math.sin(t*this.orbitalSpeed);
+    //     this.position.y = this.pivot.y + this.radius*Math.cos(t*this.orbitalSpeed);
+    // }
 }
 
 export default ShapeGenerator;

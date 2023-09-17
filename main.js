@@ -41,68 +41,48 @@ scene.background = new THREE.CubeTextureLoader()
 
 
 let axis = "y";
-let ballYo = 10;
+let ballYo = 20;
 
 let ball = new ShapeGenerator("Sphere", [1, 32, 32], "Standard", {color: 0xFFFFFF});
 ball.position.y = ballYo;
-ball.maxHeight = ballYo;
 ball.castShadow = true;
+ball.createPhysics();
+ball.physics.config.collitionType = ball.physics.collitionTypes.Sphere;
 scene.add(ball);
 
-let floor = new ShapeGenerator("Box", [10, 1, 10], "Standard");
+let floor = new ShapeGenerator("Box", [10, 1, 10], "Standard", {color: 0xFF00000});
 floor.receiveShadow = true;
 scene.add(floor);
+
+console.log(floor);
+
+let wall1 = new ShapeGenerator("Box", [1, 10, 10], "Standard");
+wall1.receiveShadow = true;
+wall1.position.y = 5.5;
+wall1.position.x = 5.5;
+scene.add(wall1);
+
+ball.physics.loadColliderItems(floor);
 
 let light = createLight(0xffffff, 1, {x: -10, y: 10, z: 0});
 scene.add(light);
 
-camera.position.z = 40;
+camera.position.z = 20;
 
-let gravity = -9.8/1000;
+let t = 0;
+function animate(time, delta) {
+	requestAnimationFrame(animate);
 
-let a = [0, gravity, 0];
-let v = [0, 0, 0];
-let p = [0, 0, 0];
+    t += 1/10000;
 
-function animate() {
-	requestAnimationFrame( animate );
+    ball.physics.move(t);
 
-    if(!minimalDistance(0, ball, floor, axis)){
-        v = v.map((item, index)=>{
-            return item + a[index];
-        });
+    // console.log(ball.position);
 
-        ball.position.x += v[0];
-        ball.position.y += v[1];
-        ball.position.z += v[2];
-
-        if(roundCollition(ball, floor)){
-            v[1]*=-1;
-        }
-    }    
-
-    console.log(v[1]);
-
-    renderer.render( scene, camera );
+    renderer.render(scene, camera);
     controls.update();
 }
 animate();
-
-function checkProperty(axis){
-    switch (axis) {
-        case "x":
-            return "width";
-        
-        case "y":
-            return "height";
-        
-        case "z":
-            return "depth";
-        
-        default:
-            return undefined;
-    }
-}
 
 function createLight(color, intensity, position = {x: 0, y: 0, z: 0}){
     let light = new THREE.PointLight(color, intensity);
@@ -114,23 +94,4 @@ function createLight(color, intensity, position = {x: 0, y: 0, z: 0}){
     light.shadow.camera.far = 500; // default
     light.shadow.focus = 1; // default
     return light;
-}
-
-function roundCollition(shape1, shape2){
-    let property;
-    let colliding;
-    let axles = ["x", "y", "z"];
-    for(let axis of axles){
-        property = checkProperty(axis);
-        colliding = shape1.position[axis] - shape1.geometry.parameters.radius*1.1 >= shape2.position[axis] + shape2.geometry.parameters[property]/2;
-        if(colliding){
-            break;
-        }
-    }
-    return !colliding;
-}
-
-function minimalDistance(range, shape1, shape2, axis){
-    let property = checkProperty(axis);
-    return shape1.position[axis] - shape1.geometry.parameters.radius - (shape2.position[axis] + shape2.geometry.parameters[property]/2) <= range;
 }
