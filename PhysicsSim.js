@@ -1,3 +1,5 @@
+import * as THREE from "three";
+
 class PhysicsSim{
     constructor(object, config){
         this.object = object;
@@ -14,9 +16,8 @@ class PhysicsSim{
 
         this.config = {
             gravity: -9.8,
-            accelerationVector: [0, 0, 0],
-            velocityVector: [0, 0, 0],
-            movementVectorU: [0, 0, 0],
+            accelerationVector: new THREE.Vector3(),
+            velocityVector: new THREE.Vector3(),
             energyLoss: 0,
             collitionOn: true,
             collitionType: this.collitionTypes.Box,
@@ -24,14 +25,18 @@ class PhysicsSim{
             mass: 1,
             energy: {
                 Kinetic: 0,
-                Potential: 0,
+                Potential: 0
             }
         }
 
         this.setKineticEnergy();
         this.setPotentialEnergy();
 
-        this.config.accelerationVector[1] = this.config.gravity;
+        this.config.accelerationVector.setComponent(1, this.config.gravity);
+
+        this.viewMovementHelper = true;
+
+        this.createArrowHelper(this.config.velocityVector, this.object.position, 1);
 
         if(config){
             for(let option in config){
@@ -45,7 +50,7 @@ class PhysicsSim{
     }
 
     setKineticEnergy(){
-        this.config.energy.Kinetic = this.config.mass*Math.pow(this.config.velocityVector[1], 2)/2;
+        this.config.energy.Kinetic = this.config.mass*Math.pow(this.config.velocityVector.getComponent(1), 2)/2;
     }
 
     getPotentialEnergy(){
@@ -72,72 +77,143 @@ class PhysicsSim{
         }
     }
     
-    roundCollision(item){
-        return this.checkCollisionCourse(item, "x") && this.checkCollisionCourse(item, "y") && this.checkCollisionCourse(item, "z");
+    roundCollition(item){
+        let angle;
+        let copy = this.config.velocityVector.clone();
+        for(let [i, face] of item.geometry.faces.entries()){
+            if(i % 2 == 0){
+                angle = copy.angleTo(face.normal);
+                // console.log(angle*180/Math.PI);
+                if(angle >= 0 && angle <= Math.PI && i/2 % 2 == 0){
+                    let collitionsCourse = this.checkCollitionCourse2(item);
+                    console.log(collitionsCourse);
+                    for(let [j, axis] of collitionsCourse.entries()){
+                        if(axis){
+                            this.config.velocityVector.setComponent(j,  this.config.velocityVector.getComponent(j)*-(1-this.config.energyLoss));
+                            // if(j == 1){
+                            //     this.object.position.y = item.position.y + item.geometry.parameters.height*face.normal.getComponent(1)/2 + this.object.geometry.parameters.radius;
+                            // }
+                            // console.log(`Colliding at: ${angle*180/Math.PI}`, j, face.normal, copy);
+
+                        }
+                    }
+                }
+            }
+        }
     }
 
-    checkCollisionCourse(item, axis){
+    checkCollitionCourse(item, axis){
         let property = this.checkProperty(axis);
         let collition = Math.abs(this.object.position[axis] - item.position[axis]) - (this.object.geometry.parameters.radius + item.geometry.parameters[property]/2);
-
-        // if(axis === "y"){
-        //     console.log(collition);
-        // }
             
         return collition < 0;
     }
     
-    minimalDistance(){
-        return this.getPotentialEnergy() < 0 && Math.abs(this.config.velocityVector[1]) <= 0.3;
+    checkGeneralCollitionCourse(item){
+        return this.checkCollitionCourse(item, "x") && this.checkCollitionCourse(item, "y") && this.checkCollitionCourse(item, "z");
     }
+
+    checkCollitionCourse2(item){
+        let copy = this.config.velocityVector.clone();
+        let unitary = copy.normalize();
+
+        let axles = ["x", "y", "z"]
+
+        let collitionsCourse = new Array(3);
+
+        for(let [i, axis] of axles.entries()){
+            if(Math.abs(this.object.position.clone().sub(item.position).getComponent(i) + this.config.velocityVector.x*unitary.getComponent(i)) <= item.geometry.parameters[this.checkProperty(axis)]/2){
+                collitionsCourse[i] = false;
+            }else{
+                collitionsCourse[i] = true;
+            }
+        }
+         
+        return collitionsCourse;
+    }
+
+    minimalGroundDistance(){
+        return this.getPotentialEnergy() < 0 && this.getKineticEnergy() <= 0.05;
+    }
+
+    minimalWallDistance(){
+        let axles = ["x", "y", "z"];
+        let collition = false;
+        for(let axis of axles){
+            collition &&= this.getKineticEnergy() < 0 && Math.abs(this.config.velocityVector[["x", "y", "z"].indexOf(axis)]) <= 0.3
+            if(collition){
+                break;
+            }
+        }
+
+        return collition;
+    }; 
 
     move(t){
         this.setKineticEnergy();
         this.setPotentialEnergy();
 
-        // console.log(Math.round(this.getPotentialEnergy(), 1));
-
-        this.config.movementVectorU = this.config.velocityVector.map((item)=>{
-            return item/item;
-        });
-
-        if(this.config.gravity){
+        if(Math.abs(this.config.gravity )> 0){
             this.gravityMovement(t);
         }
 
         this.generalMovement(t);
-
-        // console.log(`x: ${this.checkCollisionCourse(this.items[0], "x")}, y: ${this.checkCollisionCourse(this.items[0], "y")}, z: ${this.checkCollisionCourse(this.items[0], "z")}`);
-
-        if(this.config.collitionOn){           
-            if(this.roundCollision(this.items[0]) && this.config.bounce){
-                this.config.velocityVector[1]*=-(1-this.config.energyLoss);
+        
+        if(this.config.collitionOn){
+            for(let item of this.items){
+                if(this.config.bounce && this.checkGeneralCollitionCourse(item) && !this.minimalGroundDistance()){
+                    this.roundCollition(item);
+                }
             }
-        }  
+        }
+
+        if(this.viewMovementHelper){
+            this.getArrowHelper().position.set(this.object.position.x, this.object.position.y, this.object.position.z);
+            this.getArrowHelper().setDirection(this.config.velocityVector.clone().normalize());
+            this.getArrowHelper().setLength(this.config.velocityVector.clone().clampLength(0, 10).lengthSq()*10 + 5);
+        }
     }
 
     gravityMovement(t){
-        // console.log(!this.minimalDistance(), this.getPotentialEnergy(), Math.abs(this.config.velocityVector[1]));
-        if(!this.minimalDistance()){
-            this.config.velocityVector[1] += this.config.accelerationVector[1]*t;
-            this.object.position.y += this.config.velocityVector[1];
-            
-        }
-        
-        // this.config.velocityVector[1] += this.config.accelerationVector[1]*t;
-        // this.object.position.y += this.config.velocityVector[1];
+        // if(!this.minimalGroundDistance()){
+        //     this.__setVelocityVectorByAccelerationVector(1, t);
+        //     this.object.position.y += this.config.velocityVector.getComponent(1);
+        // }
+        this.config.velocityVector.y += this.config.accelerationVector.y*t;
+        this.object.position.y += this.config.velocityVector.y;
     }
 
     generalMovement(t){
-        this.config.velocityVector[0] += this.config.accelerationVector[0]*t;
-        this.config.velocityVector[2] += this.config.accelerationVector[2]*t;
+        // console.log(!this.minimalWallDistance());
+        // if(!this.minimalWallDistance()){
+        //     this.__setVelocityVectorByAccelerationVector(0, t);
+        //     this.__setVelocityVectorByAccelerationVector(2, t);
 
-        this.object.position.x += this.config.velocityVector[0];
-        this.object.position.z += this.config.velocityVector[2];
+        //     this.object.position.x += this.config.velocityVector.getComponent(0);
+        //     this.object.position.z += this.config.velocityVector.getComponent(2);
+        // }
+
+        this.config.velocityVector.x += this.config.accelerationVector.x*t;
+        this.config.velocityVector.z += this.config.accelerationVector.z*t;
+                
+        this.object.position.x += this.config.velocityVector.x;
+        this.object.position.z += this.config.velocityVector.z;
+    }
+
+    createArrowHelper(vdir, vorig = new THREE.Vector3(), length = 1, color = 0x04fc00){
+        this.arrowHelper = new THREE.ArrowHelper(vdir.normalize(), vorig, length, color);
+    }
+
+    getArrowHelper(){
+        return this.arrowHelper;
     }
 
     loadColliderItems(...items){
         this.items = items;
+    }
+
+    info(){
+        return this.config.accelerationVector;
     }
 }
 

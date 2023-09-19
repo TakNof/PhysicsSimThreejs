@@ -2,6 +2,8 @@ import * as THREE from "three";
 
 import {OrbitControls} from "three/addons/controls/OrbitControls.js";
 
+import { VertexNormalsHelper } from 'three/addons/helpers/VertexNormalsHelper.js';
+
 import ShapeGenerator from "./ShapeGenerator.js";
 
 const scene = new THREE.Scene();
@@ -41,15 +43,22 @@ scene.background = new THREE.CubeTextureLoader()
 
 
 let axis = "y";
-let ballYo = 10;
+let ballYo = 15;
 
 let ball = new ShapeGenerator("Sphere", [1, 32, 32], "Standard", {color: 0xFFFFFF});
 ball.position.y = ballYo;
-ball.position.x = -0;
+ball.position.x = 0;
 ball.castShadow = true;
+// ball.createPhysics({gravity: 0});
 ball.createPhysics();
 ball.physics.config.collitionType = ball.physics.collitionTypes.Sphere;
-ball.physics.config.accelerationVector[0] = -0.1;
+
+scene.add(ball.physics.arrowHelper);
+
+// ball.physics.config.velocityVector.setComponent(0, 0.03);
+ball.physics.config.velocityVector.x += 0.03;
+ball.physics.config.velocityVector.z += 0.02;
+// ball.physics.config.accelerationVector.setComponent(1, 0);
 scene.add(ball);
 
 let floor = new ShapeGenerator("Box", [10, 1, 10], "Standard", {color: 0xFF00000});
@@ -57,24 +66,57 @@ floor.receiveShadow = true;
 floor.position.y = -0.5;
 scene.add(floor);
 
-// console.log(floor);
+const helper = new VertexNormalsHelper( floor, 1, 0xff0000 );
+scene.add( helper );
 
 let wall1 = new ShapeGenerator("Box", [1, 10, 10], "Standard");
 wall1.receiveShadow = true;
 wall1.position.y = 5.5;
-wall1.position.x = 5.5;
+wall1.position.x = -5.5;
 scene.add(wall1);
 
-ball.physics.loadColliderItems(floor);
+let wall2 = new ShapeGenerator("Box", [1, 10, 10], "Standard");
+wall2.receiveShadow = true;
+wall2.position.y = 5.5;
+wall2.position.x = 5.5;
+scene.add(wall2);
+
+let wall3 = new ShapeGenerator("Box", [10, 10, 1], "Standard");
+wall3.receiveShadow = true;
+wall3.position.y = 5.5;
+wall3.position.z = -5.5;
+scene.add(wall3);
+
+let wall4 = new ShapeGenerator("Box", [10, 10, 1], "Standard");
+wall4.receiveShadow = true;
+wall4.position.y = 5.5;
+wall4.position.z = 5.5;
+scene.add(wall4);
+
+ball.physics.loadColliderItems(floor, wall1, wall2, wall3, wall4);
 
 let light = createLight(0xffffff, 1, {x: -10, y: 10, z: 0});
 scene.add(light);
+
+let light2 = createLight(0xffffff, 1, {x: 10, y: 10, z: 0});
+scene.add(light2);
 
 camera.position.z = 20;
 
 let playAnimation = false;
 
 let timeDivision = 100000;
+
+// let v1 = new THREE.Vector3(-1, 0, 0);
+// let v2 = new THREE.Vector3(0, 1, 0);
+
+// let magCrossProduct = v1.clone().cross(v2).lengthSq();
+// let magV1 = v1.lengthSq();
+// let magV2 = v2.lengthSq();
+
+// let angle = Math.asin(magCrossProduct/(magV1*magV2));
+
+// console.log(angle*180/Math.PI);
 
 let t = 0;
 function animate(time, delta) {
@@ -85,6 +127,10 @@ function animate(time, delta) {
 
         ball.physics.move(t);
     }
+
+    // console.log(ball.physics.config.velocityVector);
+
+    // console.log(ball.physics.info());
 
     // console.log(ball.position);
 
@@ -119,7 +165,7 @@ window.addEventListener("keydown", function(event){
     }
 
     // console.log(event.code);
-;})
+})
 
 function createLight(color, intensity, position = {x: 0, y: 0, z: 0}){
     let light = new THREE.PointLight(color, intensity);
