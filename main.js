@@ -43,23 +43,29 @@ scene.background = new THREE.CubeTextureLoader()
 
 
 let axis = "y";
-let ballYo = 15;
+let ballYo = 3;
 
 let ball = new ShapeGenerator("Sphere", [1, 32, 32], "Standard", {color: 0xFFFFFF});
 ball.position.y = ballYo;
-ball.position.x = 0;
+ball.position.x = 4;
 ball.castShadow = true;
-// ball.createPhysics({gravity: 0});
-ball.createPhysics();
+ball.createPhysics({gravity: 0, velocityVector: [rand(-10, 10)/100, 0, rand(-10, 10)/100]});
+// ball.createPhysics({energyLoss: 0});
 ball.physics.config.collitionType = ball.physics.collitionTypes.Sphere;
 
 scene.add(ball.physics.arrowHelper);
-
-// ball.physics.config.velocityVector.setComponent(0, 0.03);
-ball.physics.config.velocityVector.x += 0.03;
-ball.physics.config.velocityVector.z += 0.02;
-// ball.physics.config.accelerationVector.setComponent(1, 0);
 scene.add(ball);
+
+let ball2 = new ShapeGenerator("Sphere", [1, 32, 32], "Standard", {color: 0xFFF000});
+ball2.position.y = ballYo;
+ball2.position.x = -4;
+ball2.castShadow = true;
+ball2.createPhysics({gravity: 0, velocityVector: [rand(-10, 10)/100, 0, rand(-10, 10)/100]});
+// ball2.createPhysics({energyLoss: 0});
+ball2.physics.config.collitionType = ball2.physics.collitionTypes.Sphere;
+
+scene.add(ball2.physics.arrowHelper);
+scene.add(ball2);
 
 let floor = new ShapeGenerator("Box", [10, 1, 10], "Standard", {color: 0xFF00000});
 floor.receiveShadow = true;
@@ -93,7 +99,25 @@ wall4.position.y = 5.5;
 wall4.position.z = 5.5;
 scene.add(wall4);
 
-ball.physics.loadColliderItems(floor, wall1, wall2, wall3, wall4);
+let wall5 = new ShapeGenerator("Box", [0.5, 10, 1], "Standard");
+wall5.receiveShadow = true;
+wall5.position.y = 5;
+wall5.position.z = 2;
+scene.add(wall5);
+
+// ball.physics.loadColliderItems(floor, ball2, wall1, wall2, wall3, wall4, wall5);
+// ball2.physics.loadColliderItems(floor, ball, wall1, wall2, wall3, wall4, wall5);
+
+let scenary = [floor, wall1, wall2, wall3, wall4, wall5];
+
+ball.physics.loadColliderItems(...[ball2, ...scenary]);
+ball2.physics.loadColliderItems(...[ball, ...scenary]);
+
+console.log(ball.physics.items);
+console.log(ball.physics.items);
+
+
+// ball.physics.loadColliderItems(ball2);
 
 let light = createLight(0xffffff, 1, {x: -10, y: 10, z: 0});
 scene.add(light);
@@ -101,7 +125,7 @@ scene.add(light);
 let light2 = createLight(0xffffff, 1, {x: 10, y: 10, z: 0});
 scene.add(light2);
 
-camera.position.z = 20;
+camera.position.y = 20;
 
 let playAnimation = false;
 
@@ -126,6 +150,7 @@ function animate(time, delta) {
         t += 1/timeDivision;
 
         ball.physics.move(t);
+        ball2.physics.move(t);
     }
 
     // console.log(ball.physics.config.velocityVector);
@@ -166,6 +191,10 @@ window.addEventListener("keydown", function(event){
 
     // console.log(event.code);
 })
+
+function rand(min, max) {
+    return Math.floor(Math.random() * (max - min + 1) + min)
+}
 
 function createLight(color, intensity, position = {x: 0, y: 0, z: 0}){
     let light = new THREE.PointLight(color, intensity);
