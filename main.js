@@ -43,16 +43,21 @@ scene.background = new THREE.CubeTextureLoader()
 
 
 let axis = "y";
-let ballYo = 3;
+let ballYo = 8;
 
 let ball = new ShapeGenerator("Sphere", [1, 32, 32], "Standard", {color: 0xFFFFFF});
 ball.position.y = ballYo;
-ball.position.x = -4;
+ball.position.x = 4;
 ball.castShadow = true;
 // ball.createPhysics({gravity: 0, velocityVector: [rand(-10, 10)/100, 0, rand(-10, 10)/100], energyLoss: 0.2});
 // ball.createPhysics({velocityVector: [rand(-10, 10)/100, 0, rand(-10, 10)/100]});
-ball.createPhysics({gravity: 0, velocityVector: [rand(-10, 10)/100, 0, rand(-10, 10)/100]});
+// ball.createPhysics({gravity: 0, velocityVector: [rand(-10, 10)/100, 0, rand(-10, 10)/100]});
 // ball.createPhysics({ velocityVector: [rand(-10, 10)/100, 0, rand(-10, 10)/100]});
+
+// ball.createPhysics();
+
+ball.createPhysics({velocityVector: [-0.07, 0, 0]});
+
 ball.physics.config.collitionType = ball.physics.collitionTypes.Sphere;
 
 scene.add(ball.physics.arrowHelper);
@@ -60,11 +65,15 @@ scene.add(ball);
 
 let ball2 = new ShapeGenerator("Sphere", [1, 32, 32], "Standard", {color: 0xFFF000});
 ball2.position.y = ballYo;
-ball2.position.x = 1;
+ball2.position.x = -20;
 ball2.castShadow = true;
 // ball2.createPhysics({gravity: 0, velocityVector: [rand(-10, 10)/100, 0, rand(-10, 10)/100], energyLoss: 0.2});
-ball2.createPhysics({gravity: 0, velocityVector: [rand(-10, 10)/100, 0, rand(-10, 10)/100]});
+ball2.createPhysics({velocityVector: [rand(-10, 10)/100, 0, rand(-10, 10)/100]});
+// ball2.createPhysics({gravity: 0, velocityVector: [rand(-10, 10)/100, 0, rand(-10, 10)/100]});
 // ball2.createPhysics({gravity: 0, velocityVector: [-0.01, 0, 0.01]});
+
+// ball2.createPhysics();
+
 ball2.physics.config.collitionType = ball2.physics.collitionTypes.Sphere;
 
 scene.add(ball2.physics.arrowHelper);
@@ -133,7 +142,7 @@ camera.position.y = 20;
 
 let playAnimation = false;
 
-let timeDivision = 10000;
+let timeDivision = 100000;
 
 // let v1 = new THREE.Vector3(-1, 0, 0);
 // let v2 = new THREE.Vector3(0, 1, 0);
@@ -154,7 +163,7 @@ function animate(time, delta) {
         t += 1/timeDivision;
 
         ball.physics.move(t);
-        ball2.physics.move(t);
+        // ball2.physics.move(t);
     }
 
     renderer.render(scene, camera);
