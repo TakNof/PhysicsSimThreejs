@@ -47,10 +47,12 @@ let ballYo = 3;
 
 let ball = new ShapeGenerator("Sphere", [1, 32, 32], "Standard", {color: 0xFFFFFF});
 ball.position.y = ballYo;
-ball.position.x = 4;
+ball.position.x = -4;
 ball.castShadow = true;
+// ball.createPhysics({gravity: 0, velocityVector: [rand(-10, 10)/100, 0, rand(-10, 10)/100], energyLoss: 0.2});
+// ball.createPhysics({velocityVector: [rand(-10, 10)/100, 0, rand(-10, 10)/100]});
 ball.createPhysics({gravity: 0, velocityVector: [rand(-10, 10)/100, 0, rand(-10, 10)/100]});
-// ball.createPhysics({energyLoss: 0});
+// ball.createPhysics({ velocityVector: [rand(-10, 10)/100, 0, rand(-10, 10)/100]});
 ball.physics.config.collitionType = ball.physics.collitionTypes.Sphere;
 
 scene.add(ball.physics.arrowHelper);
@@ -58,10 +60,11 @@ scene.add(ball);
 
 let ball2 = new ShapeGenerator("Sphere", [1, 32, 32], "Standard", {color: 0xFFF000});
 ball2.position.y = ballYo;
-ball2.position.x = -4;
+ball2.position.x = 1;
 ball2.castShadow = true;
+// ball2.createPhysics({gravity: 0, velocityVector: [rand(-10, 10)/100, 0, rand(-10, 10)/100], energyLoss: 0.2});
 ball2.createPhysics({gravity: 0, velocityVector: [rand(-10, 10)/100, 0, rand(-10, 10)/100]});
-// ball2.createPhysics({energyLoss: 0});
+// ball2.createPhysics({gravity: 0, velocityVector: [-0.01, 0, 0.01]});
 ball2.physics.config.collitionType = ball2.physics.collitionTypes.Sphere;
 
 scene.add(ball2.physics.arrowHelper);
@@ -75,49 +78,50 @@ scene.add(floor);
 const helper = new VertexNormalsHelper( floor, 1, 0xff0000 );
 scene.add( helper );
 
-let wall1 = new ShapeGenerator("Box", [1, 10, 10], "Standard");
-wall1.receiveShadow = true;
-wall1.position.y = 5.5;
-wall1.position.x = -5.5;
-scene.add(wall1);
+let wallsColours = [0x03cffc, 0x09ff00, 0xff8800, 0xff00e1];
 
-let wall2 = new ShapeGenerator("Box", [1, 10, 10], "Standard");
-wall2.receiveShadow = true;
-wall2.position.y = 5.5;
-wall2.position.x = 5.5;
-scene.add(wall2);
+let walls = new Array(4);
 
-let wall3 = new ShapeGenerator("Box", [10, 10, 1], "Standard");
-wall3.receiveShadow = true;
-wall3.position.y = 5.5;
-wall3.position.z = -5.5;
-scene.add(wall3);
+for(let i = 0; i < wallsColours.length; i++){
+    let side = 1;
+    let dimensions = [10, 10, 10];
+    let axis = "x";
 
-let wall4 = new ShapeGenerator("Box", [10, 10, 1], "Standard");
-wall4.receiveShadow = true;
-wall4.position.y = 5.5;
-wall4.position.z = 5.5;
-scene.add(wall4);
+    if(i % 2 == 0){
+        side = -1;
+    }
 
-let wall5 = new ShapeGenerator("Box", [0.5, 10, 1], "Standard");
-wall5.receiveShadow = true;
-wall5.position.y = 5;
-wall5.position.z = 2;
-scene.add(wall5);
+    if(i < 2){
+        dimensions[0] = 1;
+        
+    }else{
+        dimensions[2] = 1;
+        axis = "z";
+    }
+
+    walls[i] = new ShapeGenerator("Box", dimensions, "Standard", {color: wallsColours[i], transparent: true, opacity: 0.5, side: THREE.DoubleSide});
+    walls[i].receiveShadow = true;
+    walls[i].position.y = 5.5;
+    walls[i].position[axis] = 5.5*side;
+    scene.add(walls[i]);
+    
+}
+
+// let wall5 = new ShapeGenerator("Box", [0.5, 10, 1], "Standard", {transparent: true, opacity: 0.2});
+// wall5.receiveShadow = true;
+// wall5.position.y = 5;
+// wall5.position.z = 3;
+// scene.add(wall5);
 
 // ball.physics.loadColliderItems(floor, ball2, wall1, wall2, wall3, wall4, wall5);
 // ball2.physics.loadColliderItems(floor, ball, wall1, wall2, wall3, wall4, wall5);
 
-let scenary = [floor, wall1, wall2, wall3, wall4, wall5];
+// let scenary = [floor, ...walls, wall5];
+
+let scenary = [floor, ...walls];
 
 ball.physics.loadColliderItems(...[ball2, ...scenary]);
 ball2.physics.loadColliderItems(...[ball, ...scenary]);
-
-console.log(ball.physics.items);
-console.log(ball.physics.items);
-
-
-// ball.physics.loadColliderItems(ball2);
 
 let light = createLight(0xffffff, 1, {x: -10, y: 10, z: 0});
 scene.add(light);
@@ -129,7 +133,7 @@ camera.position.y = 20;
 
 let playAnimation = false;
 
-let timeDivision = 100000;
+let timeDivision = 10000;
 
 // let v1 = new THREE.Vector3(-1, 0, 0);
 // let v2 = new THREE.Vector3(0, 1, 0);
@@ -152,12 +156,6 @@ function animate(time, delta) {
         ball.physics.move(t);
         ball2.physics.move(t);
     }
-
-    // console.log(ball.physics.config.velocityVector);
-
-    // console.log(ball.physics.info());
-
-    // console.log(ball.position);
 
     renderer.render(scene, camera);
     controls.update();

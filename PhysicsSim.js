@@ -94,7 +94,8 @@ class PhysicsSim{
                     // console.log(collitionsCourse);
                     for(let [j, axis] of collitionsCourse.entries()){
                         if(axis){
-                            this.config.velocityVector.setComponent(j,  this.config.velocityVector.getComponent(j)*-(1-this.config.energyLoss));
+                            this.config.velocityVector.setComponent(j,  this.config.velocityVector.getComponent(j)*-1);
+                            this.config.velocityVector.multiplyScalar(1-this.config.energyLoss);
                             // if(j == 1 && item.shape == "Box"){
                             //     this.object.position.y = item.position.y + item.geometry.parameters.height*face.normal.getComponent(1)/2 + this.object.geometry.parameters.radius;
                             //     console.log("Fixing sphere position");
@@ -132,23 +133,46 @@ class PhysicsSim{
         let collitionsCourse = new Array(3);
 
         let deltaAxis;
+        let deltaAxisAbs;
         let side = 1;
 
         let condition;
 
         for(let [i, axis] of axles.entries()){
-            deltaAxis = Math.abs(this.object.position[axis] - item.position[axis]);
+            deltaAxis = this.object.position[axis] - item.position[axis];
+            deltaAxisAbs = Math.abs(deltaAxis);
 
-            if(deltaAxis - this.config.velocityVector[axis] < 0){
-                side *= -1;
+            if(deltaAxis <  0){
+                side = 1;
+            }else{
+                side = -1;
             }
 
+            let unitarySign;
+            
+            if(unitary[axis] == 0){
+                unitarySign = 0;
+            }else{
+                unitarySign = -unitary[axis]/Math.abs(unitary[axis]);
+            } 
+
             if(item.shape == "Box"){
-                // condition = deltaAxis + this.config.velocityVector[axis] + this.object.geometry.parameters.radius <= item.geometry.parameters[this.checkProperty(axis)]*side/2;
-                condition = deltaAxis + this.config.velocityVector[axis] + this.object.geometry.parameters.radius*unitary[axis] <= item.geometry.parameters[this.checkProperty(axis)]*side/2;
+                condition = deltaAxisAbs + this.config.velocityVector[axis] + this.object.geometry.parameters.radius*unitarySign <= item.geometry.parameters[this.checkProperty(axis)]/2;
+                // console.log(`axis: ${axis}\n\ndeltaAxisAbs: ${deltaAxisAbs}\nvelocity vector: ${this.config.velocityVector[axis]}\nradius: ${this.object.geometry.parameters.radius*unitarySign}\nsummary: ${deltaAxisAbs + this.config.velocityVector[axis] + this.object.geometry.parameters.radius*unitarySign}\nbox side: ${item.geometry.parameters[this.checkProperty(axis)]/2}`);
+
             }else if(item.shape == "Sphere"){
-                condition = deltaAxis + this.config.velocityVector[axis] + this.object.geometry.parameters.radius*unitary[axis] <= item.geometry.parameters.radius*side;
+                condition = deltaAxisAbs + this.config.velocityVector[axis] + this.object.geometry.parameters.radius*unitarySign <= item.geometry.parameters.radius && this.object.position.clone().sub(item.position).length() <= (this.object.geometry.parameters.radius + item.geometry.parameters.radius)*1.2;
+                // console.log(this.object.position.clone().sub(item.position).lengthSq(), (this.object.geometry.parameters.radius + item.geometry.parameters.radius)*1.2);
+                
                 // console.log("Sphere collition: ", condition);
+            }
+
+            // console.log(condition);
+
+            if(axis == "y"){
+                collitionsCourse[i] = condition;
+            }else{ 
+                collitionsCourse[i] = !condition;
             }
 
             collitionsCourse[i] = !condition;
