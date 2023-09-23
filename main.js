@@ -61,10 +61,10 @@ for(let i = 0; i < balls.length; i++){
     // balls[i].createPhysics({ velocityVector: [0, rand(6, 10)/100, rand(6, 10)/100]});
     // balls[i].createPhysics({ velocityVector: [rand(-10, 10)/100, 0, rand(-10, 10)/100]});   
 
-    balls[i].createPhysics({gravity: 0 , velocityVector: [0.1, 0, 0.1]});
+    // balls[i].createPhysics({gravity: 0 , velocityVector: [0.1, 0, 0.1]});
     // balls[i].createPhysics({velocityVector: [0.1, 0, -0.1]});
 
-    // balls[i].createPhysics();
+    balls[i].createPhysics();
 
     balls[i].physics.config.collitionType = balls[i].physics.collitionTypes.Sphere;
 
@@ -133,9 +133,9 @@ for(let i = 0; i < walls.length; i++){
 
 // let scenary = [floor, ...walls, wall5];
 
-// let scenary = [floor, ...walls];
+let scenary = [floor, ...walls];
 
-let scenary = walls;
+// let scenary = walls;
 
 // let scenary = [wall5, wall6];
 
