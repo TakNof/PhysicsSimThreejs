@@ -43,7 +43,7 @@ scene.background = new THREE.CubeTextureLoader()
 
 let colours = [0x03cffc, 0x09ff00, 0xff8800, 0xff00e1];
 
-let ballYo = 8;
+let ballYo = 2;
 
 let balls = new Array(1);
 
@@ -51,20 +51,21 @@ for(let i = 0; i < balls.length; i++){
     balls[i] = new ShapeGenerator("Sphere", [1, 32, 32], "Standard", {color: colours[i]});
     balls[i].position.y = ballYo;
     // balls[i].position.x = rand(-4, 4);
-    balls[i].position.x = 0;
-    balls[i].position.z = 3;
     // balls[i].position.z = rand(-4, 4);
+    balls[i].position.z = -0;
+    balls[i].position.x = -0;
+    
     balls[i].castShadow = true;
 
     // balls[i].createPhysics({gravity: 0, velocityVector: [rand(-10, 10)/100, 0, rand(-10, 10)/100], energyLoss: 0.2});
     // balls[i].createPhysics({gravity: 0, velocityVector: [rand(-10, 10)/100, 0, rand(-10, 10)/100]});
-    // balls[i].createPhysics({ velocityVector: [0, rand(6, 10)/100, rand(6, 10)/100]});
+    balls[i].createPhysics({gravity: 0, velocityVector: [rand(6, 10)/100, 0, rand(6, 10)/100]});
     // balls[i].createPhysics({ velocityVector: [rand(-10, 10)/100, 0, rand(-10, 10)/100]});   
 
-    // balls[i].createPhysics({gravity: 0 , velocityVector: [0.1, 0, 0.1]});
-    // balls[i].createPhysics({velocityVector: [0.1, 0, -0.1]});
+    // balls[i].createPhysics({gravity: 0 , velocityVector: [-0.1, 0, -0.1]});
+    // balls[i].createPhysics({velocityVector: [0.1, 0, 0]});
 
-    balls[i].createPhysics();
+    // balls[i].createPhysics();
 
     balls[i].physics.config.collitionType = balls[i].physics.collitionTypes.Sphere;
 
@@ -133,9 +134,10 @@ for(let i = 0; i < walls.length; i++){
 
 // let scenary = [floor, ...walls, wall5];
 
-let scenary = [floor, ...walls];
+// let scenary = [floor, ...walls];
 
-// let scenary = walls;
+let scenary = walls;
+// let scenary = [floor];
 
 // let scenary = [wall5, wall6];
 
