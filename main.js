@@ -46,22 +46,23 @@ let colours = [0x03cffc, 0x09ff00, 0xff8800, 0xff00e1];
 let ballYo = 8;
 
 let balls = new Array(1);
-let direcition = -1;
 
 for(let i = 0; i < balls.length; i++){
     balls[i] = new ShapeGenerator("Sphere", [1, 32, 32], "Standard", {color: colours[i]});
     balls[i].position.y = ballYo;
     // balls[i].position.x = rand(-4, 4);
-    balls[i].position.x = -1;
-    balls[i].position.z = rand(-4, 4);
+    balls[i].position.x = 0;
+    balls[i].position.z = 3;
+    // balls[i].position.z = rand(-4, 4);
     balls[i].castShadow = true;
 
     // balls[i].createPhysics({gravity: 0, velocityVector: [rand(-10, 10)/100, 0, rand(-10, 10)/100], energyLoss: 0.2});
     // balls[i].createPhysics({gravity: 0, velocityVector: [rand(-10, 10)/100, 0, rand(-10, 10)/100]});
-    // balls[i].createPhysics({velocityVector: [rand(6, 10)/100, 0, rand(6, 10)/100]});
+    // balls[i].createPhysics({ velocityVector: [0, rand(6, 10)/100, rand(6, 10)/100]});
     // balls[i].createPhysics({ velocityVector: [rand(-10, 10)/100, 0, rand(-10, 10)/100]});   
 
-    balls[i].createPhysics({gravity: 0 , velocityVector: [0*direcition, 0, 0.1*direcition]});
+    balls[i].createPhysics({gravity: 0 , velocityVector: [0.1, 0, 0.1]});
+    // balls[i].createPhysics({velocityVector: [0.1, 0, -0.1]});
 
     // balls[i].createPhysics();
 
@@ -80,17 +81,19 @@ const helper = new VertexNormalsHelper( floor, 1, 0xff0000 );
 scene.add( helper );
 
 let walls = new Array(4);
+let alter = 0;
 
 for(let i = 0; i < walls.length; i++){
+    let z = i + alter;
     let side = 1;
     let dimensions = [10, 10, 10];
     let axis = "x";
 
-    if(i % 2 == 0){
+    if(z % 2 == 0){
         side = -1;
     }
 
-    if(i < 2){
+    if(z < 2){
         dimensions[0] = 1;
         
     }else{
@@ -130,7 +133,9 @@ for(let i = 0; i < walls.length; i++){
 
 // let scenary = [floor, ...walls, wall5];
 
-let scenary = [floor, ...walls];
+// let scenary = [floor, ...walls];
+
+let scenary = walls;
 
 // let scenary = [wall5, wall6];
 

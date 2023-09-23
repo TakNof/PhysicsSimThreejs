@@ -117,29 +117,21 @@ class PhysicsSim{
     }
 
     roundCollition2(item){
-        let angle;
-        let copy = this.config.velocityVector.clone();
-        let normalVector;
         let collisions = this.checkCollitionCourse3(item);
 
         if(item.geometry.faces){
-            let face = item.geometry.faces[this.__checkNearFace(item)];
-            if(face){
-                angle = copy.angleTo(face.normal);
-
-                if(angle != Math.PI/2){
-                    for(let [j, axis] of ["x", "y", "z"].entries()){
-                        if(face.normal[axis] != 0 && collisions[j]){
-                            this.config.velocityVector[axis] *= -(1 - this.config.energyLoss);
-                            console.log("Colliding", this.config.velocityVector);
-                        }
-
-                        // if(axis == "y" && normalVector.y != 0 && item.shape == "Box" && collisionsCourse[j]){
-                        //     this.object.position.y = item.position.y + item.geometry.parameters.height*face.normal.getComponent(1)/2 + this.object.geometry.parameters.radius;
-
-                        // }
-                    }
+            let indexOfNearestFace = this.__checkNearFace(item);
+            let face = item.geometry.faces[indexOfNearestFace];
+            for(let [j, axis] of ["x", "y", "z"].entries()){
+                if(face.normal[axis] != 0 && collisions[j]){
+                    this.config.velocityVector[axis] *= -(Math.abs(face.normal[axis]) - this.config.energyLoss);
+                    console.log(`Colliding: ${axis} against face: ${indexOfNearestFace} with normal: ${face.normal[axis]}`);
                 }
+
+                // if(axis == "y" && normalVector.y != 0 && item.shape == "Box" && collisionsCourse[j]){
+                //     this.object.position.y = item.position.y + item.geometry.parameters.height*face.normal.getComponent(1)/2 + this.object.geometry.parameters.radius;
+
+                // }
             }
 
         }else{
@@ -169,16 +161,16 @@ class PhysicsSim{
     }
 
     __checkNearFace(item){
-        let faceCenter = item.position.clone();
-        let distances = [];
+        let distances = new Array(4).fill(Infinity);
 
         for(let [i, face] of item.geometry.faces.entries()){
+            let faceCenter = item.position.clone();
             if(i % 2 == 0){
                 for(let axis of ["x", "y", "z"]){
-                    if(face.normal[axis] != 0){
-                        faceCenter[axis] = faceCenter[axis] + item.geometry.parameters[this.checkProperty(axis)]*face.normal[axis];
+                    if(face.normal[axis] != 0 && this.config.velocityVector.angleTo(face.normal) != Math.PI/2){
+                        faceCenter[axis] += face.normal[axis]*item.geometry.parameters[this.checkProperty(axis)]/2;
                         
-                        distances.push(this.object.position.clone().sub(faceCenter).length());
+                        distances[i/2] = this.object.position.clone().sub(faceCenter).length();
 
                         break;
                     }
@@ -186,17 +178,15 @@ class PhysicsSim{
             }
             
         }
-        
-
-
         return distances.indexOf(Math.min(...distances))*2;
     }
 
     checkCollitionCourse(item, axis){
-        let deltaAxisAbs = Math.abs(this.object.position[axis] - item.position[axis]);
+        let deltaAxis = this.object.position[axis] - item.position[axis];
+        let deltaAxisAbs = Math.abs(deltaAxis);
 
         if(item.shape == "Box"){
-            return deltaAxisAbs - (this.object.geometry.parameters.radius + item.geometry.parameters[this.checkProperty(axis)]/2) < 0;
+            return this.__roundDecimals(deltaAxisAbs) - this.__roundDecimals(this.object.geometry.parameters.radius + item.geometry.parameters[this.checkProperty(axis)]/2) < 0;
         }else if(item.shape == "Sphere"){
             return deltaAxisAbs - (this.object.geometry.parameters.radius + item.geometry.parameters.radius) < 0;
         }
@@ -295,7 +285,7 @@ class PhysicsSim{
                         deltaAxis = this.object.position[axis] - item.position[axis];
                         deltaAxisAbs = Math.abs(deltaAxis);
                         
-                        collisions[j] = this.__roundDecimals(deltaAxisAbs) < this.__roundDecimals(this.object.geometry.parameters.radius + item.geometry.parameters[this.checkProperty(axis)]/2) && this.checkGeneralCollitionCourse(item);
+                        collisions[j] = this.checkCollitionCourse(item, axis) && this.checkGeneralCollitionCourse(item);
                     }
                 }
             }
@@ -335,7 +325,7 @@ class PhysicsSim{
             if(!this.__collitionChecked && !this.__checkingCollision){
                 this.__checkingCollision = true;
                 for(let item of this.items){
-                    if(this.config.bounce && this.config.velocityVector.length() > 0.08){
+                    if(this.config.bounce && this.config.velocityVector.length() > 0.05){
                         this.roundCollition2(item);
                         // console.log("checking collision");
                     }
@@ -361,8 +351,6 @@ class PhysicsSim{
         if(!this.minimalGroundDistance()){
             this.config.velocityVector.y += this.config.accelerationVector.y*t;
             this.object.position.y += this.config.velocityVector.y;
-        }else{
-            this.config.velocityVector.multiplyScalar(0);
         }
         // this.config.velocityVector.y += this.config.accelerationVector.y*t;
         // this.object.position.y += this.config.velocityVector.y;
