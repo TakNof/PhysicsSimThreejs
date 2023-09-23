@@ -46,6 +46,7 @@ let colours = [0x03cffc, 0x09ff00, 0xff8800, 0xff00e1];
 let ballYo = 8;
 
 let balls = new Array(1);
+let direcition = -1;
 
 for(let i = 0; i < balls.length; i++){
     balls[i] = new ShapeGenerator("Sphere", [1, 32, 32], "Standard", {color: colours[i]});
@@ -60,7 +61,7 @@ for(let i = 0; i < balls.length; i++){
     // balls[i].createPhysics({velocityVector: [rand(6, 10)/100, 0, rand(6, 10)/100]});
     // balls[i].createPhysics({ velocityVector: [rand(-10, 10)/100, 0, rand(-10, 10)/100]});   
 
-    balls[i].createPhysics({gravity: 0, velocityVector: [0.1, 0, 0]});
+    balls[i].createPhysics({gravity: 0 , velocityVector: [0*direcition, 0, 0.1*direcition]});
 
     // balls[i].createPhysics();
 
@@ -80,7 +81,7 @@ scene.add( helper );
 
 let walls = new Array(4);
 
-for(let i = 0; i < colours.length; i++){
+for(let i = 0; i < walls.length; i++){
     let side = 1;
     let dimensions = [10, 10, 10];
     let axis = "x";
@@ -105,11 +106,24 @@ for(let i = 0; i < colours.length; i++){
     
 }
 
-let wall5 = new ShapeGenerator("Box", [1, 10, 10], "Standard", {color: colours[rand(0, colours.length - 1)], transparent: true, opacity: 0.5});
-wall5.receiveShadow = true;
-wall5.position.y = 5;
-wall5.position.x = 5.5;
-scene.add(wall5);
+// let wall5 = new ShapeGenerator("Box", [10, 10, 1], "Standard", {color: colours[rand(0, colours.length - 1)], transparent: true, opacity: 0.5});
+// let wall5 = new ShapeGenerator("Box", [1, 10, 10], "Standard", {color: colours[rand(0, colours.length - 1)], transparent: true, opacity: 0.5});
+// wall5.position.y = 5;
+// // wall5.position.z = 5.5*direcition;
+// wall5.position.x = 5.5;
+
+// wall5.receiveShadow = true;
+// scene.add(wall5);
+
+// let wall6 = new ShapeGenerator("Box", [1, 10, 10], "Standard", {color: colours[rand(0, colours.length - 1)], transparent: true, opacity: 0.5});
+// wall6.position.y = 5;
+// // wall6.position.z = 5.5*direcition;
+// wall6.position.x = -5.5;
+
+// wall6.receiveShadow = true;
+// scene.add(wall6);
+
+
 
 // ball.physics.loadColliderItems(floor, ball2, wall1, wall2, wall3, wall4, wall5);
 // ball2.physics.loadColliderItems(floor, ball, wall1, wall2, wall3, wall4, wall5);
@@ -118,7 +132,7 @@ scene.add(wall5);
 
 let scenary = [floor, ...walls];
 
-// let scenary = [wall5];
+// let scenary = [wall5, wall6];
 
 for(let i = 0; i < balls.length; i++){
     if(balls.length == 1){

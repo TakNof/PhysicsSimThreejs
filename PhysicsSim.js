@@ -194,17 +194,6 @@ class PhysicsSim{
 
     checkCollitionCourse(item, axis){
         let deltaAxisAbs = Math.abs(this.object.position[axis] - item.position[axis]);
-        let unitary = this.config.velocityVector.clone().normalize();
-
-        if(unitary[axis] == 0){
-            unitarySign = 0;
-        }else{
-            unitarySign = -unitary[axis]/Math.abs(unitary[axis]);
-        } 
-
-        if(axis == "x"){
-            console.log(deltaAxisAbs - (this.object.geometry.parameters.radius + item.geometry.parameters[this.checkProperty(axis)]/2), deltaAxisAbs - (this.object.geometry.parameters.radius + item.geometry.parameters[this.checkProperty(axis)]/2) < 0);
-        }
 
         if(item.shape == "Box"){
             return deltaAxisAbs - (this.object.geometry.parameters.radius + item.geometry.parameters[this.checkProperty(axis)]/2) < 0;
@@ -305,8 +294,8 @@ class PhysicsSim{
                     if(j != i && !collisions[j]){
                         deltaAxis = this.object.position[axis] - item.position[axis];
                         deltaAxisAbs = Math.abs(deltaAxis);
-
-                        collisions[j] = this.__roundDecimals(deltaAxisAbs) > this.__roundDecimals(this.object.geometry.parameters.radius + item.geometry.parameters[this.checkProperty(axis)]/2);
+                        
+                        collisions[j] = this.__roundDecimals(deltaAxisAbs) < this.__roundDecimals(this.object.geometry.parameters.radius + item.geometry.parameters[this.checkProperty(axis)]/2) && this.checkGeneralCollitionCourse(item);
                     }
                 }
             }
@@ -323,7 +312,7 @@ class PhysicsSim{
         let axles = ["x", "y", "z"];
         let collition = false;
         for(let axis of axles){
-            collition &&= this.getKineticEnergy() < 0 && Math.abs(this.config.velocityVector[["x", "y", "z"].indexOf(axis)]) <= 0.3
+            collition &&= this.getKineticEnergy() < 0 && Math.abs(this.config.velocityVector[["x", "y", "z"].indexOf(axis)]) <= 0.8
             if(collition){
                 break;
             }
