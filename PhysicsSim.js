@@ -35,8 +35,7 @@ class PhysicsSim{
             }
         }
         this.groundRaycaster = new THREE.Raycaster();
-        let objective = new THREE.Vector3(0, - 1, 0).normalize();
-        this.groundRaycaster.set(this.object.position, objective);
+        this.groundRaycaster.set(this.object.position, new THREE.Vector3(0, -1, 0));
 
         this.setKineticEnergy();
         this.setPotentialEnergy();
@@ -65,11 +64,11 @@ class PhysicsSim{
     setPotentialEnergy(){
         let distanceToGround;
         let intersect = this.groundRaycaster.intersectObjects(this.scene.children);
+        this.groundRaycaster.set(this.object.position, new THREE.Vector3(0, -1, 0));
 
         if(this.scene.children.length > 0 && intersect.length > 0){
-            let object = intersect[0].object;
             distanceToGround = intersect[0].distance;
-            this.config.energy.Potential = -this.config.mass*(this.object.position.y - this.object.geometry.parameters.radius + distanceToGround + object.position.y + object.geometry.parameters[this.checkProperty("y")])*this.config.gravity;
+            this.config.energy.Potential = -this.config.mass*Math.abs(this.object.position.y - distanceToGround - this.object.geometry.parameters.radius)*this.config.gravity;
         }else{
             this.config.energy.Potential = Infinity;
         }
@@ -103,19 +102,17 @@ class PhysicsSim{
         }
     }
 
-    roundCollition2(item){    
+    roundCollition(item){    
         if(item.shape == "Box"){
             let raycaster = new THREE.Raycaster();
-            raycaster.set(this.object.position, item.position.clone().normalize());
+            raycaster.set(this.object.position, this.config.velocityVector.clone().normalize());
             let intersects = raycaster.intersectObject(item);
-
-            console.log(intersects);
 
             let face;
             if(intersects.length > 0){
                 face = intersects[0].face;
 
-                let collisions = this.checkCollitionCourse3(item);
+                let collisions = this.checkCorrectedCollision(item);
                 for(let [i, axis] of ["x", "y", "z"].entries()){
                     if(face.normal[axis] != 0 && collisions[i]){
                         this.config.velocityVector[axis] *= -(Math.abs(face.normal[axis]) - this.config.energyLoss);
@@ -132,7 +129,7 @@ class PhysicsSim{
         
     }
 
-    checkCollitionCourse(item, axis){
+    checkBasicCollision(item, axis){
         let deltaAxisAbs = Math.abs(this.object.position[axis] - item.position[axis]);
 
         if(item.shape == "Box"){
@@ -142,33 +139,24 @@ class PhysicsSim{
         }
     }
      
-    checkGeneralCollitionCourse(item){
-        return this.checkCollitionCourse(item, "x") && this.checkCollitionCourse(item, "y") && this.checkCollitionCourse(item, "z");
-    }
-
-
-    checkCollitionCourse3(item){
+    checkCorrectedCollision(item){
         let axles = ["x", "y", "z"];
 
-        let collisions = new Array(3).fill(false);        
-        // console.log(`collisionBounds: ${collisionBounds}`);
-
+        let collisions = new Array(3).fill(false);
         for(let [i, axis] of axles.entries()){
-            if(this.checkCollitionCourse(item, axis)){
+            if(this.checkBasicCollision(item, axis)){
                 for( let [j, axis] of axles.entries()){
                     if(j != i && !collisions[j]){                        
-                        collisions[j] = this.checkCollitionCourse(item, axis);
-                        // console.log(collisions);
+                        collisions[j] = this.checkBasicCollision(item, axis);
                     }
                 }
             }
         }
-         
         return collisions;
     }
 
     minimalGroundDistance(){
-        return this.getPotentialEnergy() < 0 && this.getKineticEnergy() <= 0.05;
+        return this.getPotentialEnergy()/(-this.config.gravity*this.config.mass) < 0.1 && this.getKineticEnergy() <= 0.05;
     }
 
     minimalWallDistance(){
@@ -195,28 +183,18 @@ class PhysicsSim{
         this.generalMovement(t);
         
         if(this.config.collitionOn){
-            if(!this.__collitionChecked && !this.__checkingCollision){
-                this.__checkingCollision = true;
-                for(let item of this.items){
-                    if(this.config.bounce && this.config.velocityVector.length() > 0.05){
-                        this.roundCollition2(item);
-                        // console.log("checking collision");
-                    }
+            for(let item of this.items){
+                if(this.config.bounce && !this.__roundDecimals(this.config.velocityVector.length()) < 0.05){
+                    this.roundCollition(item);
+                    // console.log("checking collision");
                 }
-
-                this.__collisionChecked = true;
-                this.__checkingCollision = false;
-                
-            }else if(this.__collisionChecked && !this.__checkingCollision){
-                this.__collisionChecked = false;
-                this.__checkingCollision = false;
             }
         }
 
         if(this.viewMovementHelper){
             this.getArrowHelper().position.set(this.object.position.x, this.object.position.y, this.object.position.z);
             this.getArrowHelper().setDirection(this.config.velocityVector.clone().normalize());
-            this.getArrowHelper().setLength(this.config.velocityVector.clone().clampLength(0, 10).lengthSq()*10 + 5);
+            this.getArrowHelper().setLength(this.config.velocityVector.clone().clampLength(0, 20).length()*10 + this.object.geometry.parameters.radius*2);
         }
     }
 
@@ -226,8 +204,12 @@ class PhysicsSim{
             this.config.velocityVector.y += this.config.accelerationVector.y*t;
             this.object.position.y += this.config.velocityVector.y;
         }else{
+            console.log("canceling speed");
             this.config.velocityVector.multiplyScalar(0);
         }
+
+        // this.config.velocityVector.y += this.config.accelerationVector.y*t;
+        // this.object.position.y += this.config.velocityVector.y;
     }
 
     generalMovement(t){
