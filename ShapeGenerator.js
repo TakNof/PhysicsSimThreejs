@@ -10,8 +10,8 @@ class ShapeGenerator extends THREE.Mesh{
         this.shape = shape;
     }
 
-    createPhysics(config){
-        this.physics = new PhysicsSim(this, config);
+    createPhysics(scene, config){
+        this.physics = new PhysicsSim(scene, this, config);
     }
 
     // setOrbitalSpeed(value = 1){

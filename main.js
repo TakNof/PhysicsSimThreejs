@@ -43,29 +43,35 @@ scene.background = new THREE.CubeTextureLoader()
 
 let colours = [0x03cffc, 0x09ff00, 0xff8800, 0xff00e1];
 
-let ballYo = 2;
+let ballYo = 8;
 
 let balls = new Array(1);
-
+let invert;
 for(let i = 0; i < balls.length; i++){
     balls[i] = new ShapeGenerator("Sphere", [1, 32, 32], "Standard", {color: colours[i]});
     balls[i].position.y = ballYo;
     // balls[i].position.x = rand(-4, 4);
     // balls[i].position.z = rand(-4, 4);
-    balls[i].position.z = -0;
-    balls[i].position.x = -0;
+    if(i % 2 == 0){
+        invert = -1;
+    }else{
+        invert = 1;
+    }
+
+    // balls[i].position.z = 0;
+    // balls[i].position.x = invert*2;
     
     balls[i].castShadow = true;
 
     // balls[i].createPhysics({gravity: 0, velocityVector: [rand(-10, 10)/100, 0, rand(-10, 10)/100], energyLoss: 0.2});
     // balls[i].createPhysics({gravity: 0, velocityVector: [rand(-10, 10)/100, 0, rand(-10, 10)/100]});
-    balls[i].createPhysics({gravity: 0, velocityVector: [rand(6, 10)/100, 0, rand(6, 10)/100]});
-    // balls[i].createPhysics({ velocityVector: [rand(-10, 10)/100, 0, rand(-10, 10)/100]});   
+    // balls[i].createPhysics(scene, {velocityVector: [invert*rand(6, 10)/100, 0, rand(6, 10)/100], energyLoss: 0.2});
+    // balls[i].createPhysics({ velocityVector: [rand(6, 10)/100, 0, rand(6, 10)/100], energyLoss: 0.2});   
 
-    // balls[i].createPhysics({gravity: 0 , velocityVector: [-0.1, 0, -0.1]});
-    // balls[i].createPhysics({velocityVector: [0.1, 0, 0]});
+    // balls[i].createPhysics(scene, {gravity: 0 , velocityVector: [invert*0.1*i*-1, 0, 0]});
+    // balls[i].createPhysics({velocityVector: [-0.1, 0, -0.1]});
 
-    // balls[i].createPhysics();
+    balls[i].createPhysics(scene);
 
     balls[i].physics.config.collitionType = balls[i].physics.collitionTypes.Sphere;
 
@@ -73,7 +79,7 @@ for(let i = 0; i < balls.length; i++){
     scene.add(balls[i]);
 }
 
-let floor = new ShapeGenerator("Box", [10, 1, 10], "Standard", {color: 0xFF00000});
+let floor = new ShapeGenerator("Box", [10, 1, 10], "Standard", {color: 0xFF00000, wireframe: true});
 floor.receiveShadow = true;
 floor.position.y = -0.5;
 scene.add(floor);
@@ -110,14 +116,14 @@ for(let i = 0; i < walls.length; i++){
     
 }
 
-// let wall5 = new ShapeGenerator("Box", [10, 10, 1], "Standard", {color: colours[rand(0, colours.length - 1)], transparent: true, opacity: 0.5});
+let wall5 = new ShapeGenerator("Box", [10, 2, 10], "Standard", {color: colours[rand(0, colours.length - 1)], transparent: true, opacity: 0.5, wireframe: true});
 // let wall5 = new ShapeGenerator("Box", [1, 10, 10], "Standard", {color: colours[rand(0, colours.length - 1)], transparent: true, opacity: 0.5});
-// wall5.position.y = 5;
-// // wall5.position.z = 5.5*direcition;
-// wall5.position.x = 5.5;
+wall5.position.y = 0.5;
+wall5.position.z = 0;
+wall5.position.x = 0;
 
-// wall5.receiveShadow = true;
-// scene.add(wall5);
+wall5.receiveShadow = true;
+scene.add(wall5);
 
 // let wall6 = new ShapeGenerator("Box", [1, 10, 10], "Standard", {color: colours[rand(0, colours.length - 1)], transparent: true, opacity: 0.5});
 // wall6.position.y = 5;
@@ -136,7 +142,7 @@ for(let i = 0; i < walls.length; i++){
 
 // let scenary = [floor, ...walls];
 
-let scenary = walls;
+let scenary = [wall5];
 // let scenary = [floor];
 
 // let scenary = [wall5, wall6];
@@ -148,10 +154,13 @@ for(let i = 0; i < balls.length; i++){
         for(let j = 0; j < balls.length; j++){
             if(i != j){
                 balls[i].physics.loadColliderItems(...[balls[j], ...scenary]);
+                // balls[i].physics.loadColliderItems(...[balls[j]]);
             }
         }
     }
 }
+
+// console.log(balls[0].physics.items, balls[1].physics.items)
 
 let light = createLight(0xffffff, 1, {x: -10, y: 10, z: 0});
 scene.add(light);
@@ -164,17 +173,6 @@ camera.position.y = 20;
 let playAnimation = false;
 
 let timeDivision = 100000;
-
-// let v1 = new THREE.Vector3(-1, 0, 0);
-// let v2 = new THREE.Vector3(0, 1, 0);
-
-// let magCrossProduct = v1.clone().cross(v2).lengthSq();
-// let magV1 = v1.lengthSq();
-// let magV2 = v2.lengthSq();
-
-// let angle = Math.asin(magCrossProduct/(magV1*magV2));
-
-// console.log(angle*180/Math.PI);
 
 let t = 0;
 function animate(time, delta) {
