@@ -43,16 +43,17 @@ scene.background = new THREE.CubeTextureLoader()
 
 let colours = [0x03cffc, 0x09ff00, 0xff8800, 0xff00e1];
 
-let ballYo = 8;
+let ballYo = 1;
 
-let balls = new Array(1);
+let balls = new Array(2);
 let invert;
 for(let i = 0; i < balls.length; i++){
-    balls[i] = new ShapeGenerator("Sphere", [1, 32, 32], "Standard", {color: colours[i]});
+    balls[i] = new ShapeGenerator("Sphere", [0.5, 32, 32], "Standard", {color: colours[rand(0, colours.length - 1)], roughness: 0});
     balls[i].position.y = ballYo;
-    balls[i].position.x = 0;
-    // balls[i].position.x = rand(-4, 4);
-    // balls[i].position.z = rand(-4, 4);
+    // balls[i].position.x = 2.5;
+    // balls[i].position.z = 4;
+    balls[i].position.x = rand(-4, 4);
+    balls[i].position.z = rand(-4, 4);
     if(i % 2 == 0){
         invert = -1;
     }else{
@@ -66,21 +67,27 @@ for(let i = 0; i < balls.length; i++){
 
     // balls[i].createPhysics({gravity: 0, velocityVector: [rand(-10, 10)/100, 0, rand(-10, 10)/100], energyLoss: 0.2});
     // balls[i].createPhysics({gravity: 0, velocityVector: [rand(-10, 10)/100, 0, rand(-10, 10)/100]});
-    balls[i].createPhysics(scene, {velocityVector: [invert*rand(6, 10)/100, 0, rand(6, 10)/100], energyLoss: 0.2});
     // balls[i].createPhysics({ velocityVector: [rand(6, 10)/100, 0, rand(6, 10)/100], energyLoss: 0.2});   
 
     // balls[i].createPhysics(scene, {gravity: 0 , velocityVector: [invert*0.1*i*-1, 0, 0]});
-    // balls[i].createPhysics({velocityVector: [-0.1, 0, -0.1]});
-
-    // balls[i].createPhysics(scene);
-
+    // balls[i].createPhysics(scene, {velocityVector: [0.1, 0, -0.1]});
+    balls[i].createPhysics(scene, {velocityVector: [-rand(6, 10)/100, 0, rand(6, 10)/100], energyLoss: 0.2});
+    // if(i == 0){
+    //     balls[i].createPhysics(scene, {gravity: 0, velocityVector: [-rand(6, 10)/100, 0, -rand(6, 10)/100]}, true);
+    //     balls[i].position.x = 4;
+    //     balls[i].position.z = 4;
+    // }else{
+    //     balls[i].createPhysics(scene);
+    //     balls[i].position.x = 0;
+    //     balls[i].position.z = 0;
+    // }
+    
     balls[i].physics.config.collitionType = balls[i].physics.collitionTypes.Sphere;
 
-    scene.add(balls[i].physics.arrowHelper);
     scene.add(balls[i]);
 }
 
-let floor = new ShapeGenerator("Box", [10, 1, 10], "Standard", {color: 0xFF00000});
+let floor = new ShapeGenerator("Box", [10, 1, 10], "Standard", {color: 0xFF00000, transparent: true, opacity: 0.5});
 floor.receiveShadow = true;
 floor.position.y = -0.5;
 scene.add(floor);
@@ -89,19 +96,17 @@ const helper = new VertexNormalsHelper( floor, 1, 0xff0000 );
 scene.add( helper );
 
 let walls = new Array(4);
-let alter = 0;
 
 for(let i = 0; i < walls.length; i++){
-    let z = i + alter;
     let side = 1;
     let dimensions = [10, 10, 10];
     let axis = "x";
 
-    if(z % 2 == 0){
+    if(i % 2 == 0){
         side = -1;
     }
 
-    if(z < 2){
+    if(i < 2){
         dimensions[0] = 1;
         
     }else{
@@ -117,31 +122,35 @@ for(let i = 0; i < walls.length; i++){
     
 }
 
-let wall5 = new ShapeGenerator("Box", [5, 2, 5], "Standard", {color: colours[rand(0, colours.length - 1)], transparent: true, opacity: 0.5});
-// let wall5 = new ShapeGenerator("Box", [1, 10, 10], "Standard", {color: colours[rand(0, colours.length - 1)], transparent: true, opacity: 0.5});
-wall5.position.y = 4;
-wall5.position.z = 2.5;
-wall5.position.x = 2.5;
+// let stairs = new Array(4);
+// let startPoint = 7;
 
-wall5.receiveShadow = true;
-scene.add(wall5);
+// for(let i = 0; i < stairs.length; i++){
+//     let side = 1;
+//     let side2 = -1;
+//     let dimensions = [5, 2, 5];
 
-// let wall6 = new ShapeGenerator("Box", [1, 10, 10], "Standard", {color: colours[rand(0, colours.length - 1)], transparent: true, opacity: 0.5});
-// wall6.position.y = 5;
-// // wall6.position.z = 5.5*direcition;
-// wall6.position.x = -5.5;
+//     if(i % 2 == 0){
+//         side = -1;
+//     }
 
-// wall6.receiveShadow = true;
-// scene.add(wall6);
+//     if(i % 3 == 0){
+//         side2 = 1;
+//     }else{
+//         side2 = -1;
+//     }
 
+//     stairs[i] = new ShapeGenerator("Box", dimensions, "Standard", {color: colours[rand(0, colours.length - 1)], transparent: true, opacity:0.5});
+//     stairs[i].receiveShadow = true;
+//     stairs[i].position.y = startPoint - i*dimensions[1];
+//     stairs[i].position.x = 2.5*side2;
+//     stairs[i].position.z = 2.5*side2*side;
+//     scene.add(stairs[i]);
+// }
 
+// let scenary = [floor, ...walls, ...stairs];
 
-// ball.physics.loadColliderItems(floor, ball2, wall1, wall2, wall3, wall4, wall5);
-// ball2.physics.loadColliderItems(floor, ball, wall1, wall2, wall3, wall4, wall5);
-
-let scenary = [floor, ...walls, wall5];
-
-// let scenary = [floor, ...walls];
+let scenary = [floor, ...walls];
 
 // let scenary = [wall5];
 // let scenary = [floor];
@@ -153,21 +162,24 @@ for(let i = 0; i < balls.length; i++){
         balls[i].physics.loadColliderItems(...scenary);
     }else{
         for(let j = 0; j < balls.length; j++){
-            if(i != j){
-                balls[i].physics.loadColliderItems(...[balls[j], ...scenary]);
+            if(i == j){
+                let copy = [...balls];
+                copy.splice(j, 1);
+                balls[i].physics.loadColliderItems(...[...copy, ...scenary]);
                 // balls[i].physics.loadColliderItems(...[balls[j]]);
             }
         }
     }
 }
 
-// console.log(balls[0].physics.items, balls[1].physics.items)
-
 let light = createLight(0xffffff, 1, {x: -10, y: 10, z: 0});
 scene.add(light);
 
 let light2 = createLight(0xffffff, 1, {x: 10, y: 10, z: 0});
 scene.add(light2);
+
+let light3 = createLight(0xffffff, 1, {x: 0, y: 0, z: 10});
+scene.add(light3);
 
 camera.position.y = 20;
 
@@ -186,6 +198,14 @@ function animate(time, delta) {
             ball.physics.move(t);
         }
     }
+
+
+    // camera.rotation.x += Math.sin(15 + t*1000);
+    // camera.rotation.z += Math.cos(15 + t*1000);
+
+    // balls.forEach(ball => {
+    //     console.log(ball.position);
+    // });
 
     renderer.render(scene, camera);
     controls.update();
