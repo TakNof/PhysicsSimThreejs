@@ -43,44 +43,28 @@ scene.background = new THREE.CubeTextureLoader()
 
 let colours = [0x03cffc, 0x09ff00, 0xff8800, 0xff00e1];
 
-let ballYo = 1;
+let playAnimation = false;
 
-let balls = new Array(2);
-let invert;
+let timeDivision = 1000;
+
+let ballYo = 12;
+
+let balls = new Array(10);
 for(let i = 0; i < balls.length; i++){
     balls[i] = new ShapeGenerator("Sphere", [0.5, 32, 32], "Standard", {color: colours[rand(0, colours.length - 1)], roughness: 0});
-    balls[i].position.y = ballYo;
-    // balls[i].position.x = 2.5;
-    // balls[i].position.z = 4;
-    balls[i].position.x = rand(-4, 4);
-    balls[i].position.z = rand(-4, 4);
-    if(i % 2 == 0){
-        invert = -1;
-    }else{
-        invert = 1;
-    }
+    balls[i].position.y = ballYo + rand(0, 6);
 
-    // balls[i].position.z = 0;
-    // balls[i].position.x = invert*2;
+    // balls[i].position.y = ballYo;
+
+    balls[i].position.x = rand(0, 4);
+    balls[i].position.z = rand(0, 4);
+
     
     balls[i].castShadow = true;
 
-    // balls[i].createPhysics({gravity: 0, velocityVector: [rand(-10, 10)/100, 0, rand(-10, 10)/100], energyLoss: 0.2});
-    // balls[i].createPhysics({gravity: 0, velocityVector: [rand(-10, 10)/100, 0, rand(-10, 10)/100]});
-    // balls[i].createPhysics({ velocityVector: [rand(6, 10)/100, 0, rand(6, 10)/100], energyLoss: 0.2});   
 
-    // balls[i].createPhysics(scene, {gravity: 0 , velocityVector: [invert*0.1*i*-1, 0, 0]});
-    // balls[i].createPhysics(scene, {velocityVector: [0.1, 0, -0.1]});
-    balls[i].createPhysics(scene, {velocityVector: [-rand(6, 10)/100, 0, rand(6, 10)/100], energyLoss: 0.2});
-    // if(i == 0){
-    //     balls[i].createPhysics(scene, {gravity: 0, velocityVector: [-rand(6, 10)/100, 0, -rand(6, 10)/100]}, true);
-    //     balls[i].position.x = 4;
-    //     balls[i].position.z = 4;
-    // }else{
-    //     balls[i].createPhysics(scene);
-    //     balls[i].position.x = 0;
-    //     balls[i].position.z = 0;
-    // }
+    balls[i].createPhysics(scene, {velocityVector: [-0.1,0,-0.1], energyLoss: 0.2, friction: true}, true);
+
     
     balls[i].physics.config.collitionType = balls[i].physics.collitionTypes.Sphere;
 
@@ -122,35 +106,35 @@ for(let i = 0; i < walls.length; i++){
     
 }
 
-// let stairs = new Array(4);
-// let startPoint = 7;
+let stairs = new Array(4);
+let startPoint = 7;
 
-// for(let i = 0; i < stairs.length; i++){
-//     let side = 1;
-//     let side2 = -1;
-//     let dimensions = [5, 2, 5];
+for(let i = 0; i < stairs.length; i++){
+    let side = 1;
+    let side2 = -1;
+    let dimensions = [5, 2, 5];
 
-//     if(i % 2 == 0){
-//         side = -1;
-//     }
+    if(i % 2 == 0){
+        side = -1;
+    }
 
-//     if(i % 3 == 0){
-//         side2 = 1;
-//     }else{
-//         side2 = -1;
-//     }
+    if(i % 3 == 0){
+        side2 = 1;
+    }else{
+        side2 = -1;
+    }
 
-//     stairs[i] = new ShapeGenerator("Box", dimensions, "Standard", {color: colours[rand(0, colours.length - 1)], transparent: true, opacity:0.5});
-//     stairs[i].receiveShadow = true;
-//     stairs[i].position.y = startPoint - i*dimensions[1];
-//     stairs[i].position.x = 2.5*side2;
-//     stairs[i].position.z = 2.5*side2*side;
-//     scene.add(stairs[i]);
-// }
+    stairs[i] = new ShapeGenerator("Box", dimensions, "Standard", {color: colours[rand(0, colours.length - 1)], transparent: true, opacity:0.5});
+    stairs[i].receiveShadow = true;
+    stairs[i].position.y = startPoint - i*dimensions[1];
+    stairs[i].position.x = 2.5*side2;
+    stairs[i].position.z = 2.5*side2*side;
+    scene.add(stairs[i]);
+}
 
-// let scenary = [floor, ...walls, ...stairs];
+let scenary = [floor, ...walls, ...stairs];
 
-let scenary = [floor, ...walls];
+// let scenary = [floor, ...walls];
 
 // let scenary = [wall5];
 // let scenary = [floor];
@@ -167,8 +151,11 @@ for(let i = 0; i < balls.length; i++){
                 copy.splice(j, 1);
                 balls[i].physics.loadColliderItems(...[...copy, ...scenary]);
                 // balls[i].physics.loadColliderItems(...[balls[j]]);
+                // balls[i].physics.loadColliderItems(...[...[balls[j]], ...scenary]);
+                break;
             }
         }
+        // console.log(balls[i].physics.items);
     }
 }
 
@@ -183,10 +170,6 @@ scene.add(light3);
 
 camera.position.y = 20;
 
-let playAnimation = false;
-
-let timeDivision = 100000;
-
 let t = 0;
 function animate(time, delta) {
 	requestAnimationFrame(animate);
@@ -195,7 +178,7 @@ function animate(time, delta) {
         t += 1/timeDivision;
 
         for(let ball of balls){
-            ball.physics.move(t);
+            ball.physics.move(1/timeDivision);
         }
     }
 
@@ -229,8 +212,12 @@ window.addEventListener("keydown", function(event){
         break;
 
         case "KeyR":
-            ball.position.y = ballYo
-            ball.physics.config.velocityVector[1] = 0;
+            for(let ball of balls){
+                ball.position.y = ballYo + rand(0, 6);
+                ball.position.x = rand(-4, 4);
+                ball.position.z = rand(-4, 4);
+                ball.physics.config.velocityVector.fromArray([-0.1,0,-0.1]);
+            }            
         break;
     
         default:

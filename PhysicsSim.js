@@ -13,7 +13,7 @@ class PhysicsSim{
 
         this.collitionTypes = Object.freeze({
             Box: Symbol("box"),
-            Sphere: Symbol("autumn"),
+            Sphere: Symbol("Sphere")
         });
 
         this.energyTypes = Object.freeze({
@@ -26,6 +26,7 @@ class PhysicsSim{
             accelerationVector: new THREE.Vector3(),
             velocityVector: new THREE.Vector3(),
             energyLoss: 0,
+            friction: false,
             collitionOn: true,
             collitionType: this.collitionTypes.Box,
             bounce: true,
@@ -41,7 +42,7 @@ class PhysicsSim{
         this.setKineticEnergy();
         this.setPotentialEnergy();
 
-        this.config.accelerationVector.setComponent(1, this.config.gravity);
+        this.config.accelerationVector.y = this.config.gravity;
 
         this.viewMovementHelper = viewMovementHelper;
 
@@ -56,9 +57,10 @@ class PhysicsSim{
 
         if(config){
             for(let option in config){
-                this.config[option] = config[option];
                 if(option == "accelerationVector" || option == "velocityVector"){
                     this.config[option] = new THREE.Vector3().fromArray(config[option]);
+                }else{
+                    this.config[option] = config[option];
                 }
             }
         }
@@ -71,14 +73,18 @@ class PhysicsSim{
 
         if(this.scene.children.length > 0 && intersect.length > 0){
             distanceToGround = intersect[0].distance;
-            this.config.energy.Potential = -this.config.mass*Math.abs(this.object.position.y - distanceToGround - this.object.geometry.parameters.radius)*this.config.gravity;
+            this.config.energy.Potential = -this.config.mass*Math.abs(distanceToGround - this.object.geometry.parameters.radius)*this.config.gravity;
         }else{
             this.config.energy.Potential = Infinity;
         }
     }
 
     setKineticEnergy(){
-        this.config.energy.Kinetic = this.config.mass*Math.pow(this.config.velocityVector.getComponent(1), 2)/2;
+        if(this.config.velocityVector.length() > 1/10000){
+            this.config.energy.Kinetic = this.config.mass*Math.pow(this.config.velocityVector.length(), 2)/2;
+        }else{
+            this.config.energy.Kinetic = 0;
+        }
     }
 
     getPotentialEnergy(){
@@ -123,79 +129,36 @@ class PhysicsSim{
                         // console.log(`Colliding ${item.shape}: ${axis} against face with normal: ${face.normal[axis]}`);
 
                         if(axis == "y" && face.normal.y != 0){
-                            this.object.position.y = item.position.y + item.geometry.parameters.height*face.normal.y/2 + this.object.geometry.parameters.radius;
+                            this.object.position.y = item.position.y + item.geometry.parameters.height/2 + this.object.geometry.parameters.radius;
                         }
                     }
                 }
             }
         }else if(item.shape == "Sphere"){
-            let collisions = this.checkCorrectedCollision(item);
             let distance = this.object.position.clone().sub(item.position);
-            let direction = distance.clone().normalize().multiplyScalar(-1);
-            let perpendicular1 = new THREE.Vector3().applyAxisAngle(direction, Math.PI/2);
-            let perpendicular2 = new THREE.Vector3().applyAxisAngle(direction, Math.PI);
-            let velocityVectorClone;
 
-            let create;
-            if(!this.arrowHelperDistance){
-                this.arrowHelperDistance = new THREE.ArrowHelper(direction.normalize(), this.object.position);
-                this.arrowHelperPerp1 = new THREE.ArrowHelper(perpendicular1, this.object.position);
-                this.arrowHelperPerp2 = new THREE.ArrowHelper(perpendicular2, this.object.position);
-                create = true;
-            }
-            
-            
-            if(create){
-                this.scene.add(this.arrowHelperDistance);
-                this.scene.add(this.arrowHelperPerp1);
-                this.scene.add(this.arrowHelperPerp2);
-            }else if(this.arrowHelperDistance){
-                this.arrowHelperDistance.position.set(this.object.position.x, this.object.position.y, this.object.position.z);
-                this.arrowHelperDistance.setDirection(direction);
+            if(this.checkBasicGeneralCollision(item)){
+                // let direction = distance.clone().normalize();
+                // let crossVector = new THREE.Vector3().crossVectors(this.config.velocityVector, direction).normalize();
+                // let angle = this.config.velocityVector.angleTo(direction);
+                // this.config.velocityVector.applyAxisAngle(crossVector, angle);
 
-                this.arrowHelperPerp1.position.set(this.object.position.x, this.object.position.y, this.object.position.z);
-                this.arrowHelperPerp1.setDirection(perpendicular1);
+                let direction = distance.clone().normalize();
+                let copyVelocity = this.config.velocityVector.clone().normalize().sub(direction).multiplyScalar(-1);
+                let crossVector = new THREE.Vector3().crossVectors(this.config.velocityVector, copyVelocity).normalize();
+                let angle = this.config.velocityVector.angleTo(copyVelocity);
+                this.config.velocityVector.applyAxisAngle(crossVector, angle);
+                this.config.velocityVector.multiplyScalar(1 - this.config.energyLoss);
 
-                this.arrowHelperPerp2.position.set(this.object.position.x, this.object.position.y, this.object.position.z);
-                this.arrowHelperPerp2.setDirection(perpendicular2);
-
-                
-                this.arrowHelperDistance.setLength(distance.length());
-                this.arrowHelperPerp1.setLength(distance.length());
-                this.arrowHelperPerp2.setLength(distance.length());
-            }
-
-            // if(item.physics && this.checkBasicGeneralCollision(item)){
-            //     velocityVectorClone = this.config.velocityVector.add(item.physics.config.velocityVector).applyAxisAngle(direction, new THREE.Vector3(0,0,0).angleTo(perpendicular1));
-            // }else{
-            //     velocityVectorClone = this.config.velocityVector.clone().applyAxisAngle(direction, new THREE.Vector3(0,0,0).angleTo(perpendicular1));
-            // }
-
-            velocityVectorClone = this.config.velocityVector.clone().applyAxisAngle(direction, new THREE.Vector3(0,0,0).angleTo(perpendicular1));
-
-            for(let [i, axis] of ["x", "y", "z"].entries()){
-                if(this.checkBasicCollision(item, axis)){
-                    this.config.velocityVector[axis] = velocityVectorClone[axis];
+                if(item.physics){
+                    let copyVelocityInv = this.config.velocityVector.clone().normalize().sub(direction);
+                    let crossVectorInv = new THREE.Vector3().crossVectors(this.config.velocityVector, copyVelocityInv).normalize();
+                    let angleInv = item.physics.config.velocityVector.angleTo(copyVelocityInv);
+                    item.physics.config.velocityVector.applyAxisAngle(crossVectorInv, angleInv);
                 }
-            }
-            
 
-            // let collisions = this.checkCorrectedCollision(item);
-            // let distance = this.object.position.clone().sub(item.position);
-            // let direction = distance.clone().normalize();
-            // let perpendicular = distance.multiply(new THREE.Vector3(1,0,0)).normalize();
-
-            // let velocityVectorClone = this.config.velocityVector.clone().applyAxisAngle(direction, new THREE.Vector3(0,0,0).angleTo(perpendicular));
-            // let velocityVectorCloneX = velocityVectorClone.clone().applyAxisAngle(direction, new THREE.Vector3(0,0,0).angleTo(direction));
-            // let velocityVectorCloneY = velocityVectorClone.clone().applyAxisAngle(direction, new THREE.Vector3(0,0,0).angleTo(perpendicular));
-
-            // for(let [i, axis] of ["x", "y", "z"].entries()){
-            //     if(this.checkBasicCollision(item, axis)){
-            //         this.config.velocityVector = velocityVectorCloneX;
-            //         item.physics.config.velocityVector = velocityVectorCloneY;
-            //     }
-            // }
-        }        
+            }            
+        }
         
     }
 
@@ -203,10 +166,9 @@ class PhysicsSim{
         let deltaAxisAbs = Math.abs(this.object.position[axis] - item.position[axis]);
 
         if(item.shape == "Box"){
-            return this.__roundDecimals(deltaAxisAbs) - this.__roundDecimals(this.object.geometry.parameters.radius + item.geometry.parameters[this.checkProperty(axis)]/2) < 0;
-        }else if(item.shape == "Sphere"){
-            let Odirection = this.object.position.clone().sub(item.position).normalize();            
-            return this.__roundDecimals(deltaAxisAbs) - this.__roundDecimals((this.object.geometry.parameters.radius + item.geometry.parameters.radius)*Math.abs(Odirection[axis])) < 0;
+            return this.#roundDecimals(deltaAxisAbs) - this.#roundDecimals(this.object.geometry.parameters.radius + item.geometry.parameters[this.checkProperty(axis)]/2) <= 0;
+        }else if(item.shape == "Sphere"){          
+            return this.#roundDecimals(deltaAxisAbs) - this.#roundDecimals((this.object.geometry.parameters.radius + item.geometry.parameters.radius)) <= 0;
         }
     }
 
@@ -233,7 +195,7 @@ class PhysicsSim{
     }
 
     minimalGroundDistance(){
-        return this.getPotentialEnergy()/(-this.config.gravity*this.config.mass) < 0.1 && this.getKineticEnergy() <= 0.05;
+        return this.getPotentialEnergy() < 0.1 && this.getKineticEnergy() <= 0.0025;
     }
 
     minimalWallDistance(){
@@ -249,19 +211,19 @@ class PhysicsSim{
         return collition;
     }; 
 
-    move(t){
+    move(divisor){
         this.setKineticEnergy();
         this.setPotentialEnergy();
 
         if(Math.abs(this.config.gravity)> 0){
-            this.gravityMovement(t);
+            this.gravityMovement(divisor);
         }
 
-        this.generalMovement(t);
+        this.generalMovement(divisor);
         
         if(this.config.collitionOn){
             for(let item of this.items){
-                if(this.config.bounce && !this.__roundDecimals(this.config.velocityVector.length()) < 0.05){
+                if(this.config.bounce && !this.#roundDecimals(this.config.velocityVector.length()) < 0.05){
                     this.roundCollition(item);
                     // console.log("checking collision");
                 }
@@ -275,27 +237,37 @@ class PhysicsSim{
         }
     }
 
-    gravityMovement(t){
+    gravityMovement(divisor){
         // console.log(!this.minimalGroundDistance(), this.getPotentialEnergy(), this.getKineticEnergy());
         if(!this.minimalGroundDistance()){
-            this.config.velocityVector.y += this.config.accelerationVector.y*t;
+            this.config.velocityVector.y += this.config.accelerationVector.y*divisor;
             this.object.position.y += this.config.velocityVector.y;
         }else{
-            // console.log("canceling speed");
+            console.log("canceling speed");
             this.config.velocityVector.y = 0;
+
+            if(this.config.friction){
+                this.config.velocityVector.x *= (0.99);
+                this.config.velocityVector.z *= (0.99);
+            }
         }
 
-        // this.config.velocityVector.y += this.config.accelerationVector.y*t;
+        
+        // this.config.velocityVector.y += this.config.accelerationVector.y*divisor;
         // this.object.position.y += this.config.velocityVector.y;
     }
 
-    generalMovement(t){
+    generalMovement(divisor){
         if(!this.minimalWallDistance()){
-            this.config.velocityVector.x += this.config.accelerationVector.x*t;
-            this.config.velocityVector.z += this.config.accelerationVector.z*t;
+            this.config.velocityVector.x += this.config.accelerationVector.x*divisor;
+            this.config.velocityVector.z += this.config.accelerationVector.z*divisor;
 
             this.object.position.x += this.config.velocityVector.x;
             this.object.position.z += this.config.velocityVector.z;
+        }
+
+        if(this.config.velocityVector.length() < 1/1000){
+            this.config.velocityVector.multiplyScalar(0);
         }
     }
 
@@ -309,11 +281,6 @@ class PhysicsSim{
     }
 
     loadColliderItems(...items){
-        for(let item of items){
-            if(item.physics && this.items.indexOf(item) == -1){
-                item.physics.items.push(this.object);
-            }
-        }
         this.items = items;
     }
 
@@ -321,7 +288,7 @@ class PhysicsSim{
         return this.config.accelerationVector;
     }
 
-    __roundDecimals(num, decimalsAmount = 2){
+    #roundDecimals(num, decimalsAmount = 2){
         let fix = Math.pow(10, decimalsAmount);
         return Math.round((num + Number.EPSILON) * fix) / fix;
     }
