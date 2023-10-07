@@ -26,11 +26,13 @@ class PhysicsSim{
             accelerationVector: new THREE.Vector3(),
             velocityVector: new THREE.Vector3(),
             energyLoss: 0,
-            friction: false,
+            friction: true,
+            momentum: true,
             collitionOn: true,
-            collitionType: this.collitionTypes.Box,
             bounce: true,
+            collitionType: this.collitionTypes.Box,
             mass: 1,
+
             energy: {
                 Kinetic: 0,
                 Potential: 0
@@ -135,28 +137,75 @@ class PhysicsSim{
                 }
             }
         }else if(item.shape == "Sphere"){
-            let distance = this.object.position.clone().sub(item.position);
-
+        
             if(this.checkBasicGeneralCollision(item)){
-                // let direction = distance.clone().normalize();
-                // let crossVector = new THREE.Vector3().crossVectors(this.config.velocityVector, direction).normalize();
-                // let angle = this.config.velocityVector.angleTo(direction);
-                // this.config.velocityVector.applyAxisAngle(crossVector, angle);
+                if(this.config.momentum){
+                    // if(item.physics.config.velocityVector.length() == 0){
+                    //     console.log("Whole momentum transfered");
+                    //     item.physics.config.velocityVector.copy(this.config.velocityVector).multiplyScalar(0.5);
+                    //     this.config.velocityVector.multiplyScalar(-0.5);
+                    // }
+                    
+                    // if(this.getKineticEnergy() > item.physics.getKineticEnergy()){
+                    //     this.config.velocityVector.multiplyScalar(0.5);
+                    //     item.physics.config.velocityVector.multiplyScalar(1.5);
+                        
+                    // }else{
+                    //     this.config.velocityVector.multiplyScalar(1.5);
+                    //     item.physics.config.velocityVector.multiplyScalar(0.5);
+                    // }
 
-                let direction = distance.clone().normalize();
-                let copyVelocity = this.config.velocityVector.clone().normalize().sub(direction).multiplyScalar(-1);
-                let crossVector = new THREE.Vector3().crossVectors(this.config.velocityVector, copyVelocity).normalize();
-                let angle = this.config.velocityVector.angleTo(copyVelocity);
-                this.config.velocityVector.applyAxisAngle(crossVector, angle);
-                this.config.velocityVector.multiplyScalar(1 - this.config.energyLoss);
+                    let distance = this.object.position.clone().sub(item.position);
+                    let direction = distance.clone().normalize();
+                    let directionAdjust = direction.clone().normalize().sub(this.config.velocityVector);
+                    let crossVector = new THREE.Vector3().crossVectors(this.config.velocityVector, directionAdjust).normalize();
+                    
+                    let angle = this.config.velocityVector.angleTo(directionAdjust);
 
-                if(item.physics){
-                    let copyVelocityInv = this.config.velocityVector.clone().normalize().sub(direction);
-                    let crossVectorInv = new THREE.Vector3().crossVectors(this.config.velocityVector, copyVelocityInv).normalize();
-                    let angleInv = item.physics.config.velocityVector.angleTo(copyVelocityInv);
-                    item.physics.config.velocityVector.applyAxisAngle(crossVectorInv, angleInv);
+                    let multiplierItem = this.itemFinalVelocity(item);
+                    let multiplierObject = this.objectFinalVelocity(item, multiplierItem);
+                    
+                    // let copyVelocity = this.config.velocityVector.clone().normalize().sub(direction).multiplyScalar(-1);
+                    // let crossVector = new THREE.Vector3().crossVectors(this.config.velocityVector, copyVelocity).normalize().multiplyScalar(1 - this.config.energyLoss);
+                    // let angle = this.config.velocityVector.angleTo(copyVelocity);
+                    // this.config.velocityVector.applyAxisAngle(crossVector, angle);
+
+                    if(item.physics){
+                        if(item.physics.config.velocityVector.length() == 0){
+                            item.physics.config.velocityVector.copy(this.config.velocityVector).normalize();
+                            console.log("Whole momentum transfered");
+                        }
+
+                        let directionAdjustInv = this.config.velocityVector.clone().normalize().sub(direction);
+                        let crossVectorInv = new THREE.Vector3().crossVectors(this.config.velocityVector, directionAdjustInv).normalize();
+                        let angleInv = item.physics.config.velocityVector.angleTo(directionAdjustInv);
+                        item.physics.config.velocityVector.applyAxisAngle(crossVectorInv, angleInv).multiplyScalar(multiplierItem);
+                    }
+
+                    this.config.velocityVector.applyAxisAngle(crossVector, angle).multiplyScalar(multiplierObject);
+                    
+                }else{
+                    // let distance = this.object.position.clone().sub(item.position);
+                    // let direction = distance.clone().normalize();
+                    // let crossVector = new THREE.Vector3().crossVectors(this.config.velocityVector, direction).normalize();
+                    // let angle = this.config.velocityVector.angleTo(direction);
+                    // this.config.velocityVector.applyAxisAngle(crossVector, angle);
+
+                    let distance = this.object.position.clone().sub(item.position);
+                    let direction = distance.clone().normalize();
+                    let copyVelocity = this.config.velocityVector.clone().normalize().sub(direction).multiplyScalar(-1);
+                    let crossVector = new THREE.Vector3().crossVectors(this.config.velocityVector, copyVelocity).normalize().multiplyScalar(1 - this.config.energyLoss);
+                    let angle = this.config.velocityVector.angleTo(copyVelocity);
+                    this.config.velocityVector.applyAxisAngle(crossVector, angle);
+
+                    if(item.physics){
+                        let copyVelocityInv = this.config.velocityVector.clone().normalize().sub(direction);
+                        let crossVectorInv = new THREE.Vector3().crossVectors(this.config.velocityVector, copyVelocityInv).normalize();
+                        let angleInv = item.physics.config.velocityVector.angleTo(copyVelocityInv);
+                        item.physics.config.velocityVector.applyAxisAngle(crossVectorInv, angleInv);
+                    }
                 }
-
+                
             }            
         }
         
@@ -164,18 +213,19 @@ class PhysicsSim{
 
     checkBasicCollision(item, axis){
         let deltaAxisAbs = Math.abs(this.object.position[axis] - item.position[axis]);
-
-        if(item.shape == "Box"){
-            return this.#roundDecimals(deltaAxisAbs) - this.#roundDecimals(this.object.geometry.parameters.radius + item.geometry.parameters[this.checkProperty(axis)]/2) <= 0;
-        }else if(item.shape == "Sphere"){          
-            return this.#roundDecimals(deltaAxisAbs) - this.#roundDecimals((this.object.geometry.parameters.radius + item.geometry.parameters.radius)) <= 0;
-        }
+        return this.#roundDecimals(deltaAxisAbs) - this.#roundDecimals(this.object.geometry.parameters.radius + item.geometry.parameters[this.checkProperty(axis)]/2) <= 0;
     }
 
     checkBasicGeneralCollision(item){
-        return this.checkBasicCollision(item, "x") && this.checkBasicCollision(item, "y") && this.checkBasicCollision(item, "z");
+        if(item.shape == "Box"){
+            return this.checkBasicCollision(item, "x") && this.checkBasicCollision(item, "y") && this.checkBasicCollision(item, "z");
+        }else if(item.shape == "Sphere"){    
+            let distance = this.object.position.clone().sub(item.position);      
+            return distance.length() <= this.object.geometry.parameters.radius + item.geometry.parameters.radius;
+        }
+        
     }
-     
+    
     checkCorrectedCollision(item){
         let axles = ["x", "y", "z"];
 
@@ -192,6 +242,18 @@ class PhysicsSim{
             }
         }
         return collisions;
+    }
+
+    itemFinalVelocity(item){
+        let thisMomentum = this.config.velocityVector.clone().multiplyScalar(this.config.mass);
+        let itemMomentum = item.physics.config.velocityVector.clone().multiplyScalar(item.physics.config.mass);
+        let velocityCalc = new THREE.Vector3().subVectors(item.physics.config.velocityVector, this.config.velocityVector);
+        let massAdd = this.config.mass + item.physics.config.mass;
+        return new THREE.Vector3().addVectors(thisMomentum, itemMomentum).sub(velocityCalc).multiplyScalar(1/massAdd).length();
+    }
+
+    objectFinalVelocity(item, itemFinalVelocity = this.itemFinalVelocity(item)){
+        return new THREE.Vector3().subVectors(item.physics.config.velocityVector, this.config.velocityVector).length() - itemFinalVelocity;
     }
 
     minimalGroundDistance(){
@@ -222,11 +284,21 @@ class PhysicsSim{
         this.generalMovement(divisor);
         
         if(this.config.collitionOn){
-            for(let item of this.items){
-                if(this.config.bounce && !this.#roundDecimals(this.config.velocityVector.length()) < 0.05){
-                    this.roundCollition(item);
-                    // console.log("checking collision");
+            if(!this.__collitionChecked && !this.__checkingCollision){
+                this.__checkingCollision = true;
+                for(let item of this.items){
+                    if(this.config.bounce){
+                        this.roundCollition(item);
+                        // console.log("checking collision");
+                    }
                 }
+  
+                this.__collisionChecked = true;
+                this.__checkingCollision = false;
+                
+            }else if(this.__collisionChecked && !this.__checkingCollision){
+                this.__collisionChecked = false;
+                this.__checkingCollision = false;
             }
         }
 
@@ -266,7 +338,7 @@ class PhysicsSim{
             this.object.position.z += this.config.velocityVector.z;
         }
 
-        if(this.config.velocityVector.length() < 1/1000){
+        if(this.config.velocityVector.length() < 1/10000){
             this.config.velocityVector.multiplyScalar(0);
         }
     }

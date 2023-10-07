@@ -47,23 +47,27 @@ let playAnimation = false;
 
 let timeDivision = 1000;
 
-let ballYo = 12;
+let ballYo = 5;
 
 let balls = new Array(10);
 for(let i = 0; i < balls.length; i++){
     balls[i] = new ShapeGenerator("Sphere", [0.5, 32, 32], "Standard", {color: colours[rand(0, colours.length - 1)], roughness: 0});
-    balls[i].position.y = ballYo + rand(0, 6);
+    // balls[i].position.y = ballYo + rand(0, 6);
 
-    // balls[i].position.y = ballYo;
+    balls[i].position.y = ballYo;
 
-    balls[i].position.x = rand(0, 4);
-    balls[i].position.z = rand(0, 4);
+    balls[i].position.x = rand(-4, 4);
+    balls[i].position.z = rand(-4, 4);
 
     
     balls[i].castShadow = true;
 
-
-    balls[i].createPhysics(scene, {velocityVector: [-0.1,0,-0.1], energyLoss: 0.2, friction: true}, true);
+    if(i < 2){
+        balls[i].createPhysics(scene, {velocityVector: [-1/timeDivision*100,0,-1/timeDivision*100], friction: true, energyLoss: 0.2}, true);
+    }else{
+        balls[i].createPhysics(scene, {}, true);
+    }
+    
 
     
     balls[i].physics.config.collitionType = balls[i].physics.collitionTypes.Sphere;
@@ -102,39 +106,40 @@ for(let i = 0; i < walls.length; i++){
     walls[i].receiveShadow = true;
     walls[i].position.y = 5;
     walls[i].position[axis] = 5.5*side;
+    // walls[i].position[axis] = 4*side;
     scene.add(walls[i]);
     
 }
 
-let stairs = new Array(4);
-let startPoint = 7;
+// let stairs = new Array(4);
+// let startPoint = 7;
 
-for(let i = 0; i < stairs.length; i++){
-    let side = 1;
-    let side2 = -1;
-    let dimensions = [5, 2, 5];
+// for(let i = 0; i < stairs.length; i++){
+//     let side = 1;
+//     let side2 = -1;
+//     let dimensions = [5, 2, 5];
 
-    if(i % 2 == 0){
-        side = -1;
-    }
+//     if(i % 2 == 0){
+//         side = -1;
+//     }
 
-    if(i % 3 == 0){
-        side2 = 1;
-    }else{
-        side2 = -1;
-    }
+//     if(i % 3 == 0){
+//         side2 = 1;
+//     }else{
+//         side2 = -1;
+//     }
 
-    stairs[i] = new ShapeGenerator("Box", dimensions, "Standard", {color: colours[rand(0, colours.length - 1)], transparent: true, opacity:0.5});
-    stairs[i].receiveShadow = true;
-    stairs[i].position.y = startPoint - i*dimensions[1];
-    stairs[i].position.x = 2.5*side2;
-    stairs[i].position.z = 2.5*side2*side;
-    scene.add(stairs[i]);
-}
+//     stairs[i] = new ShapeGenerator("Box", dimensions, "Standard", {color: colours[rand(0, colours.length - 1)], transparent: true, opacity:0.5});
+//     stairs[i].receiveShadow = true;
+//     stairs[i].position.y = startPoint - i*dimensions[1];
+//     stairs[i].position.x = 2.5*side2;
+//     stairs[i].position.z = 2.5*side2*side;
+//     scene.add(stairs[i]);
+// }
 
-let scenary = [floor, ...walls, ...stairs];
+// let scenary = [floor, ...walls, ...stairs];
 
-// let scenary = [floor, ...walls];
+let scenary = [floor, ...walls];
 
 // let scenary = [wall5];
 // let scenary = [floor];
@@ -177,8 +182,11 @@ function animate(time, delta) {
     if(playAnimation){
         t += 1/timeDivision;
 
-        for(let ball of balls){
+        for(let [i, ball] of balls.entries()){
             ball.physics.move(1/timeDivision);
+            // if(i == 1){
+            //     console.log(ball.physics.config.velocityVector);
+            // }
         }
     }
 
@@ -213,10 +221,11 @@ window.addEventListener("keydown", function(event){
 
         case "KeyR":
             for(let ball of balls){
-                ball.position.y = ballYo + rand(0, 6);
+                // ball.position.y = ballYo + rand(0, 6);
+                ball.position.y = ballYo;
                 ball.position.x = rand(-4, 4);
                 ball.position.z = rand(-4, 4);
-                ball.physics.config.velocityVector.fromArray([-0.1,0,-0.1]);
+                ball.physics.config.velocityVector.fromArray([-1/timeDivision*100,0,-1/timeDivision*100]);
             }            
         break;
     
