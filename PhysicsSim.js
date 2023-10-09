@@ -162,27 +162,28 @@ class PhysicsSim{
                     
                     let angle = this.config.velocityVector.angleTo(directionAdjust);
 
-                    let multiplierItem = this.itemFinalVelocity(item);
-                    let multiplierObject = this.objectFinalVelocity(item, multiplierItem);
+                    let multiplierItem = this.#roundDecimals(this.itemFinalVelocity(item), 4);
+                    let multiplierObject = this.#roundDecimals(this.objectFinalVelocity(item, multiplierItem), 4);
                     
                     // let copyVelocity = this.config.velocityVector.clone().normalize().sub(direction).multiplyScalar(-1);
                     // let crossVector = new THREE.Vector3().crossVectors(this.config.velocityVector, copyVelocity).normalize().multiplyScalar(1 - this.config.energyLoss);
                     // let angle = this.config.velocityVector.angleTo(copyVelocity);
                     // this.config.velocityVector.applyAxisAngle(crossVector, angle);
 
+                    console.log(`multiplierObject: ${multiplierObject}, multiplierItem: ${multiplierItem}`);
+
                     if(item.physics){
                         if(item.physics.config.velocityVector.length() == 0){
-                            item.physics.config.velocityVector.copy(this.config.velocityVector).normalize();
-                            console.log("Whole momentum transfered");
+                            item.physics.config.velocityVector = new THREE.Vector3(1,0,0);
                         }
 
                         let directionAdjustInv = this.config.velocityVector.clone().normalize().sub(direction);
                         let crossVectorInv = new THREE.Vector3().crossVectors(this.config.velocityVector, directionAdjustInv).normalize();
                         let angleInv = item.physics.config.velocityVector.angleTo(directionAdjustInv);
-                        item.physics.config.velocityVector.applyAxisAngle(crossVectorInv, angleInv).multiplyScalar(multiplierItem);
+                        item.physics.config.velocityVector.applyAxisAngle(crossVectorInv, angleInv).multiplyScalar(multiplierItem*(1 - this.config.energyLoss));
                     }
 
-                    this.config.velocityVector.applyAxisAngle(crossVector, angle).multiplyScalar(multiplierObject);
+                    this.config.velocityVector.applyAxisAngle(crossVector, angle).multiplyScalar(multiplierObject*(1 - this.config.energyLoss));
                     
                 }else{
                     // let distance = this.object.position.clone().sub(item.position);
@@ -221,7 +222,7 @@ class PhysicsSim{
             return this.checkBasicCollision(item, "x") && this.checkBasicCollision(item, "y") && this.checkBasicCollision(item, "z");
         }else if(item.shape == "Sphere"){    
             let distance = this.object.position.clone().sub(item.position);      
-            return distance.length() <= this.object.geometry.parameters.radius + item.geometry.parameters.radius;
+            return distance.length() - (this.object.geometry.parameters.radius + item.geometry.parameters.radius) < 0.1;
         }
         
     }
@@ -245,15 +246,15 @@ class PhysicsSim{
     }
 
     itemFinalVelocity(item){
-        let thisMomentum = this.config.velocityVector.clone().multiplyScalar(this.config.mass);
-        let itemMomentum = item.physics.config.velocityVector.clone().multiplyScalar(item.physics.config.mass);
-        let velocityCalc = new THREE.Vector3().subVectors(item.physics.config.velocityVector, this.config.velocityVector);
+        let thisMomentum = this.config.velocityVector.length() * this.config.mass;
+        let itemMomentum = item.physics.config.velocityVector.length() * item.physics.config.mass;
+        let momentumByDiference = this.config.mass * (item.physics.config.velocityVector.length() - this.config.velocityVector.length());
         let massAdd = this.config.mass + item.physics.config.mass;
-        return new THREE.Vector3().addVectors(thisMomentum, itemMomentum).sub(velocityCalc).multiplyScalar(1/massAdd).length();
+        return (thisMomentum + itemMomentum - momentumByDiference)/massAdd;
     }
 
     objectFinalVelocity(item, itemFinalVelocity = this.itemFinalVelocity(item)){
-        return new THREE.Vector3().subVectors(item.physics.config.velocityVector, this.config.velocityVector).length() - itemFinalVelocity;
+        return item.physics.config.velocityVector.length() - this.config.velocityVector.length() + itemFinalVelocity;
     }
 
     minimalGroundDistance(){

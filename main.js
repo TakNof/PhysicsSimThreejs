@@ -62,8 +62,10 @@ for(let i = 0; i < balls.length; i++){
     
     balls[i].castShadow = true;
 
-    if(i < 2){
-        balls[i].createPhysics(scene, {velocityVector: [-1/timeDivision*100,0,-1/timeDivision*100], friction: true, energyLoss: 0.2}, true);
+    if(i < 1){
+        balls[i].createPhysics(scene, {velocityVector: [2/timeDivision*100,0,2/timeDivision*100]}, true);
+        // balls[i].position.x = -3;
+        // balls[i].position.z = -0.5;
     }else{
         balls[i].createPhysics(scene, {}, true);
     }
@@ -180,8 +182,6 @@ function animate(time, delta) {
 	requestAnimationFrame(animate);
 
     if(playAnimation){
-        t += 1/timeDivision;
-
         for(let [i, ball] of balls.entries()){
             ball.physics.move(1/timeDivision);
             // if(i == 1){
