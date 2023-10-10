@@ -13,27 +13,6 @@ class ShapeGenerator extends THREE.Mesh{
     createPhysics(scene, config){
         this.physics = new ObjectPhysics(scene, this, config);
     }
-
-    // setOrbitalSpeed(value = 1){
-    //     this.orbitalSpeed = value;
-    // }
-
-    // setMovementRadius(radius = 10){
-    //     this.radius = radius;
-    // }
-
-    // setCenter(center = {x: 0, y: 0}){
-    //     this.pivot = center;
-    // }
-
-    // rotate(t){
-    //     this.rotation.z = -t;
-    // }
-
-    // orbitate(t){
-    //     this.position.x = this.pivot.x + this.radius*Math.sin(t*this.orbitalSpeed);
-    //     this.position.y = this.pivot.y + this.radius*Math.cos(t*this.orbitalSpeed);
-    // }
 }
 
 export default ShapeGenerator;

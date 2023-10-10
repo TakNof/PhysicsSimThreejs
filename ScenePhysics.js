@@ -31,12 +31,12 @@ class ScenePhysics{
     add(...items){
         this.items = items;
 
-        if(this.config.viewMovementHelper){
-            for(let item of items){
-                if(item.physics){
-                    item.physics.config.gravity = this.config.gravity;
-                    item.physics.config.accelerationVector.y = this.config.gravity;
-                    item.physics.config.friction = this.config.friction;
+        for(let item of items){
+            if(item.physics){
+                item.physics.config.gravity = this.config.gravity;
+                item.physics.config.accelerationVector.y = this.config.gravity;
+                item.physics.config.friction = this.config.friction;
+                if(this.config.viewMovementHelper){
                     item.physics.createArrowHelper(item.physics.config.velocityVector.clone(), item.position);
                 }
             }
