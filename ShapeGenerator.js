@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import PhysicsSim from "./PhysicsSim.js";
+import ObjectPhysics from "./ObjectPhysics.js";
 
 class ShapeGenerator extends THREE.Mesh{
     constructor(shape, data, materialType = "Basic", config = {color: 0x1EA5DC}){
@@ -10,8 +10,8 @@ class ShapeGenerator extends THREE.Mesh{
         this.shape = shape;
     }
 
-    createPhysics(scene, config, viewMovementHelper){
-        this.physics = new PhysicsSim(scene, this, config, viewMovementHelper);
+    createPhysics(scene, config){
+        this.physics = new ObjectPhysics(scene, this, config);
     }
 
     // setOrbitalSpeed(value = 1){
