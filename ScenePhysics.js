@@ -43,6 +43,16 @@ class ScenePhysics{
         }
     }
 
+    remove(item){
+        let index = this.items.indexOf(item);
+        if(index !== -1){
+            if(this.items[index].physics.arrowHelper){
+                this.scene.remove(this.items[index].physics.arrowHelper);
+            }
+            this.items.splice(index, 1);
+        }
+    }
+
     checkWorldCollisions(){
         for(let i = 0; i < this.items.length; i++){
             for(let j = i + 1; j < this.items.length; j++){
@@ -145,13 +155,38 @@ class ScenePhysics{
         }
     }
 
-    checkBoxWithBoxCollision(){
+    checkBoxWithBoxCollision(item1, item2){
+        let raycaster = new THREE.Raycaster();
+        raycaster.set(item1.position, item1.physics.config.velocityVector.clone().normalize());
+        let intersects = raycaster.intersectObject(item2);
 
+        if(intersects.length > 0 && this.boxGeneralCollisionBounds(item1, item2)){
+            let face = intersects[0].face;
+
+            let collisions = this.boxCollisionBounds(item1, item2);
+            for(let [i, axis] of ["x", "y", "z"].entries()){
+                if(face.normal[axis] != 0 && collisions[i]){
+                    console.log(`Box colliding with box: ${item1.shape} ${item2.shape}`);
+                    item1.physics.config.velocityVector[axis] *= -(Math.abs(face.normal[axis]) - this.config.energyLoss);
+
+                    if(axis == "y" && face.normal.y != 0){
+                        item1.position.y = item2.position.y + item2.geometry.parameters.height/2 + item1.geometry.parameters.height/2;
+                    }
+                }
+            }
+        }
     }
 
     boxAxisCollisionBounds(item1, item2, axis){
         let deltaAxisAbs = Math.abs(item1.position[axis] - item2.position[axis]);
-        return this.#roundDecimals(deltaAxisAbs) - this.#roundDecimals(item1.geometry.parameters.radius + item2.geometry.parameters[this.checkProperty(axis)]/2) <= 0;
+        if(item1.shape == "Sphere"){
+            return this.#roundDecimals(deltaAxisAbs) - this.#roundDecimals(item1.geometry.parameters.radius + item2.geometry.parameters[this.checkProperty(axis)]/2) <= 0;
+        }
+
+        if(item1.shape == "Box"){
+            return this.#roundDecimals(deltaAxisAbs) - this.#roundDecimals(item1.geometry.parameters[this.checkProperty(axis)]/2 + item2.geometry.parameters[this.checkProperty(axis)]/2) <= 0;
+        }
+        
     }
     
     boxGeneralCollisionBounds(item1, item2){
