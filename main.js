@@ -3,6 +3,7 @@ import * as THREE from "three";
 import {OrbitControls} from "three/addons/controls/OrbitControls.js";
 
 import ShapeGenerator from "./ShapeGenerator.js";
+import ScenaryGenerator from "./ScenearyGenerator.js";
 import ScenePhysics from "./ScenePhysics.js";
 
 const scene = new THREE.Scene();
@@ -40,7 +41,7 @@ scene.background = new THREE.CubeTextureLoader()
         '6.png'
 	]);
 
-let scenePhysics = new ScenePhysics(scene, {viewMovementHelper: true, energyLoss: 0.1});
+let scenePhysics = new ScenePhysics(scene, {viewMovementHelper: true, energyLoss: 0.2});
 
 let colours = [0x03cffc, 0x09ff00, 0xff8800, 0xff00e1];
 
@@ -59,42 +60,14 @@ for(let i = 0; i < balls.length; i++){
 
     balls[i].castShadow = true;
 
-    balls[i].createPhysics(scene, {velocityVector: [-1/timeDivision*100, 0, 1/timeDivision*100]});
+    balls[i].createPhysics(scene, {mass: rand(1, balls.length), velocityVector: [-1/timeDivision*100, 0, 1/timeDivision*100]});
 
     scene.add(balls[i]);
 }
 
-let floor = new ShapeGenerator("Box", [10, 1, 10], "Standard", {color: 0xFF00000, transparent: true, opacity: 0.5});
-floor.receiveShadow = true;
-floor.position.y = -0.5;
-scene.add(floor);
+let room = new ScenaryGenerator([10,2,10], 15, "Standard", {color: colours[rand(0, colours.length-1)], transparent: true, opacity: 0.5, side: THREE.DoubleSide})
 
-let walls = new Array(4);
-
-for(let i = 0; i < walls.length; i++){
-    let side = 1;
-    let dimensions = [10, 10, 10];
-    let axis = "x";
-
-    if(i % 2 == 0){
-        side = -1;
-    }
-
-    if(i < 2){
-        dimensions[0] = 1;
-        
-    }else{
-        dimensions[2] = 1;
-        axis = "z";
-    }
-
-    walls[i] = new ShapeGenerator("Box", dimensions, "Standard", {color: colours[i], transparent: true, opacity: 0.5, side: THREE.DoubleSide});
-    walls[i].receiveShadow = true;
-    walls[i].position.y = 5;
-    walls[i].position[axis] = 5.5*side;
-    scene.add(walls[i]);
-    
-}
+scene.add(...room.items);
 
 let stairs = new Array(4);
 let startPoint = 7;
@@ -122,7 +95,7 @@ for(let i = 0; i < stairs.length; i++){
     scene.add(stairs[i]);
 }
 
-let scenary = [floor, ...walls, ...stairs];
+let scenary = [...room.items, ...stairs];
 
 scenePhysics.add(...scenary, ...balls);
 
@@ -142,9 +115,7 @@ function animate(time, delta) {
 
     if(playAnimation){
         scenePhysics.checkWorldCollisions();
-        for(let ball of balls){
-            ball.physics.move(1/timeDivision);
-        }
+        scenePhysics.update(1/timeDivision);
     }
     renderer.render(scene, camera);
     controls.update();

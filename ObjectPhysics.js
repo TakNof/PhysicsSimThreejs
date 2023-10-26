@@ -58,8 +58,8 @@ class ObjectPhysics{
     }
 
     setKineticEnergy(){
-        if(this.config.velocityVector.length() > 1/10000){
-            this.config.energy.Kinetic = this.#roundDecimals(this.config.mass*Math.pow(this.config.velocityVector.length(), 2)/4);
+        if(this.getVelocityVector().length() > 1/10000){
+            this.config.energy.Kinetic = this.#roundDecimals(this.config.mass*Math.pow(this.getVelocityVector().length(), 2)/4);
         }else{
             this.config.energy.Kinetic = 0;
         }
@@ -74,11 +74,23 @@ class ObjectPhysics{
     }
 
     setMomentum(){
-        this.config.momentum = this.config.mass * this.config.velocityVector.length();
+        this.config.momentum = this.getVelocityVector().clone().multiplyScalar(this.config.mass);
     }
 
     getMomentum(){
         return this.config.momentum;
+    }
+
+    getVelocityVector(){
+        return this.config.velocityVector;
+    }
+
+    getAccelerationVector(){
+        return this.config.accelerationVector;
+    }
+
+    getMass(){
+        return this.config.mass;
     }
 
     minimalGroundDistance(){
@@ -89,7 +101,7 @@ class ObjectPhysics{
         let axles = ["x", "y", "z"];
         let collition = false;
         for(let axis of axles){
-            collition &&= this.getKineticEnergy() < 0 && Math.abs(this.config.velocityVector[["x", "y", "z"].indexOf(axis)]) <= 0.3
+            collition &&= this.getKineticEnergy() < 0 && Math.abs(this.getVelocityVector()[["x", "y", "z"].indexOf(axis)]) <= 0.3
             if(collition){
                 break;
             }
@@ -111,39 +123,44 @@ class ObjectPhysics{
         
         if(this.arrowHelper){
             this.getArrowHelper().position.set(this.object.position.x, this.object.position.y, this.object.position.z);
-            this.getArrowHelper().setDirection(this.config.velocityVector.clone().normalize());
-            this.getArrowHelper().setLength(this.config.velocityVector.clone().clampLength(0, 20).length()*10 + this.object.geometry.parameters.radius*2);
+            this.getArrowHelper().setDirection(this.getVelocityVector().clone().normalize());
+            if(this.object.geometry.parameters.radius){
+                this.getArrowHelper().setLength(this.getVelocityVector().clone().clampLength(0, 20).length()*10 + this.object.geometry.parameters.radius*2);
+            }else{
+                this.getArrowHelper().setLength(this.getVelocityVector().clone().clampLength(0, 20).length()*10 + this.object.geometry.boundingSphere.radius*2);
+            }
+            
         }
     }
 
     gravityMovement(divisor){
         if(!this.minimalGroundDistance()){
-            this.config.velocityVector.y += this.config.accelerationVector.y*divisor;
-            this.object.position.y += this.config.velocityVector.y;
+            this.getVelocityVector().y += this.config.accelerationVector.y*divisor;
+            this.object.position.y += this.getVelocityVector().y;
         }else{
             // console.log("canceling speed");
-            this.config.velocityVector.y = 0;
+            this.getVelocityVector().y = 0;
             if(this.config.friction){
-                this.config.velocityVector.x *= (0.99);
-                this.config.velocityVector.z *= (0.99);
+                this.getVelocityVector().x *= (0.99);
+                this.getVelocityVector().z *= (0.99);
             }
         }
         
-        // this.config.velocityVector.y += this.config.accelerationVector.y*divisor;
-        // this.object.position.y += this.config.velocityVector.y;
+        // this.getVelocityVector().y += this.config.accelerationVector.y*divisor;
+        // this.object.position.y += this.getVelocityVector().y;
     }
 
     generalMovement(divisor){
         if(!this.minimalWallDistance()){
-            this.config.velocityVector.x += this.config.accelerationVector.x*divisor;
-            this.config.velocityVector.z += this.config.accelerationVector.z*divisor;
+            this.getVelocityVector().x += this.config.accelerationVector.x*divisor;
+            this.getVelocityVector().z += this.config.accelerationVector.z*divisor;
 
-            this.object.position.x += this.config.velocityVector.x;
-            this.object.position.z += this.config.velocityVector.z;
+            this.object.position.x += this.getVelocityVector().x;
+            this.object.position.z += this.getVelocityVector().z;
         }
 
-        if(this.config.velocityVector.length() < 1/10000){
-            this.config.velocityVector.multiplyScalar(0);
+        if(this.getVelocityVector().length() < 1/10000){
+            this.getVelocityVector().multiplyScalar(0);
         }
 
         this.rotateAccordingToDirection();
@@ -154,7 +171,8 @@ class ObjectPhysics{
         let complementaryAxels = ["z", "x", "y"];
 
         for(let [i, axis] of axles.entries()){
-            this.object[`rotate${complementaryAxels[i].toUpperCase()}`](2*Math.PI * -this.config.velocityVector[axis]);
+            // this.object[`rotate${complementaryAxels[i].toUpperCase()}`](2*Math.PI * -this.getVelocityVector()[axis]);
+            this.object[`rotate${complementaryAxels[i].toUpperCase()}`](-this.getVelocityVector()[axis]/this.object.geometry.parameters.radius);
         }
 
     }

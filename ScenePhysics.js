@@ -10,6 +10,7 @@ class ScenePhysics{
         this.scene = scene;
 
         this.axles = ["x", "y", "z"];
+        this.complementaryAxels = ["z", "x", "y"];
 
         this.config = {
             gravity: -9.8,
@@ -43,6 +44,14 @@ class ScenePhysics{
         }
     }
 
+    update(divisor){
+        this.items.forEach((item) =>{
+            if(item.physics){
+                item.physics.move(divisor);
+            }
+        });
+    }
+
     remove(item){
         let index = this.items.indexOf(item);
         if(index !== -1){
@@ -59,7 +68,13 @@ class ScenePhysics{
                 if(this.config.bounce && (this.items[i].physics || this.items[j].physics)){
                     let index = this.checkCollisionByType(this.items[i], this.items[j]);
                     let collisionType = this.allCollisions(index);
-                    if(index == 2){
+                    // if(index == 2){
+                    //     this[collisionType](this.items[j], this.items[i]);
+                    // }else{
+                    //     this[collisionType](this.items[i], this.items[j]);
+                    // }
+
+                    if(this.items[j].physics){
                         this[collisionType](this.items[j], this.items[i]);
                     }else{
                         this[collisionType](this.items[i], this.items[j]);
@@ -115,19 +130,23 @@ class ScenePhysics{
             
             
             if(item1.physics){
-                if(item1.physics.config.velocityVector.length() == 0){
-                    item1.physics.config.velocityVector = new THREE.Vector3(1,0,0);
-                }
+                // if(item1.physics.config.velocityVector.length() == 0){
+                //     item1.physics.config.velocityVector = new THREE.Vector3(1,0,0);
+                // }
 
-                item1.physics.config.velocityVector.applyAxisAngle(...this.dataToCollideSphere(distance, item1)).normalize().multiplyScalar(itemsVels.item1Vel*(1 - this.config.energyLoss));
+                // item1.physics.config.velocityVector.applyAxisAngle(...this.dataToCollideSphere(distance, item1)).normalize().multiplyScalar(itemsVels.item1Vel*(1 - this.config.energyLoss));
+            
+                item1.physics.config.velocityVector = itemsVels.item1Vel;
             }
 
             if(item2.physics){
-                if(item2.physics.config.velocityVector.length() == 0){
-                    item2.physics.config.velocityVector = new THREE.Vector3(1,0,0);
-                }
+                // if(item2.physics.config.velocityVector.length() == 0){
+                //     item2.physics.config.velocityVector = new THREE.Vector3(1,0,0);
+                // }
 
-                item2.physics.config.velocityVector.applyAxisAngle(...this.dataToCollideSphere(distance.multiplyScalar(-1), item2)).normalize().multiplyScalar(itemsVels.item2Vel*(1 - this.config.energyLoss));
+                // item2.physics.config.velocityVector.applyAxisAngle(...this.dataToCollideSphere(distance.multiplyScalar(-1), item2)).normalize().multiplyScalar(itemsVels.item2Vel*(1 - this.config.energyLoss));
+            
+                item2.physics.config.velocityVector = itemsVels.item2Vel;
             }
         }
         
@@ -147,7 +166,7 @@ class ScenePhysics{
                     console.log(`Sphere colliding with box: ${item1.shape} ${item2.shape}`);
                     item1.physics.config.velocityVector[axis] *= -(Math.abs(face.normal[axis]) - this.config.energyLoss);
 
-                    if(axis == "y" && face.normal.y != 0){
+                    if(axis == "y" && face.normal.y > 0){
                         item1.position.y = item2.position.y + item2.geometry.parameters.height/2 + item1.geometry.parameters.radius;
                     }
                 }
@@ -187,6 +206,7 @@ class ScenePhysics{
             return this.#roundDecimals(deltaAxisAbs) - this.#roundDecimals(item1.geometry.parameters[this.checkProperty(axis)]/2 + item2.geometry.parameters[this.checkProperty(axis)]/2) <= 0;
         }
         
+        
     }
     
     boxGeneralCollisionBounds(item1, item2){
@@ -215,11 +235,18 @@ class ScenePhysics{
     }
 
     calculateVelocityPostCollision(item1, item2){
-        let momentumByDiference = item1.physics.config.mass * (item2.physics.config.velocityVector.length() - item1.physics.config.velocityVector.length());
-        let massAdd = item1.physics.config.mass + item2.physics.config.mass;
+        // let momentumByDiference = item1.physics.config.mass * (item2.physics.config.velocityVector.length() - item1.physics.config.velocityVector.length());
+        // let massAdd = item1.physics.config.mass + item2.physics.config.mass;
 
-        let item2Vel = this.#roundDecimals((item1.physics.getMomentum() + item2.physics.getMomentum() - momentumByDiference)/massAdd);
-        let item1Vel = this.#roundDecimals(item2.physics.config.velocityVector.length() - item1.physics.config.velocityVector.length() + item2Vel);
+        // let item2Vel = this.#roundDecimals((item1.physics.getMomentum().length() + item2.physics.getMomentum().length() - momentumByDiference)/massAdd);
+        // let item1Vel = this.#roundDecimals(item2.physics.config.velocityVector.length() - item1.physics.config.velocityVector.length() + item2Vel);
+
+        let momentumByDiference = item2.physics.getVelocityVector().clone().sub(item2.physics.getVelocityVector()).multiplyScalar(item1.physics.getMass());
+        let massAdd = item1.physics.getMass() + item2.physics.getMass();
+
+        let item2Vel = item1.physics.getMomentum().clone().add(item2.physics.getMomentum()).sub(momentumByDiference).multiplyScalar(1/massAdd);
+        let item1Vel = item2.physics.getVelocityVector().clone().sub(item1.physics.getVelocityVector()).add(item2Vel);
+
 
         return {item1Vel, item2Vel};
     }
