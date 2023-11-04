@@ -140,10 +140,11 @@ class ObjectPhysics{
         }else{
             // console.log("canceling speed");
             this.getVelocityVector().y = 0;
-            if(this.config.friction){
-                this.getVelocityVector().x *= (0.99);
-                this.getVelocityVector().z *= (0.99);
-            }
+        }
+
+        if(this.getPotentialEnergy() < 0.1 && this.config.friction){
+            this.getVelocityVector().x *= (0.99);
+            this.getVelocityVector().z *= (0.99);
         }
         
         // this.getVelocityVector().y += this.config.accelerationVector.y*divisor;

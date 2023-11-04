@@ -1,6 +1,14 @@
 import ShapeGenerator from "./ShapeGenerator.js";
 
+
 class ScenaryGenerator{
+    /**
+     * @constructor
+     * @param {[height: Number, width: Number, depth: Number]} floorDimensions
+     * @param {Number} wallHeight
+     * @param {String} materialType
+     * @param {Object} config
+     */
     constructor(floorDimensions, wallHeight, materialType, config){
         let floor = new ShapeGenerator("Box", floorDimensions, materialType, config);
         floor.receiveShadow = true;
@@ -27,7 +35,7 @@ class ScenaryGenerator{
 
             walls[i] = new ShapeGenerator("Box", dimensions, materialType, config);
             walls[i].receiveShadow = true;
-            walls[i].position.y = 5;
+            walls[i].position.y = wallHeight/2;
             walls[i].position[axis] =  ((floor.geometry.parameters[this.checkGeoParameters(axis)]/2) + (floor.geometry.parameters.height/2))*side;
         }
 

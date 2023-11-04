@@ -49,14 +49,18 @@ let playAnimation = false;
 
 let timeDivision = 1000;
 
-let ballYo = 8;
+let ballYo = 10;
 
-let balls = new Array(10);
+let balls = new Array(5);
 for(let i = 0; i < balls.length; i++){
     balls[i] = new ShapeGenerator("Sphere", [0.5, 32, 32], "Standard", {color: colours[rand(0, colours.length - 1)], roughness: 0});
     balls[i].position.y = ballYo + rand(0, 6);
     balls[i].position.x = rand(0, 4);
     balls[i].position.z = rand(-4, 0);
+
+    // balls[i].position.y = ballYo + i;
+    // balls[i].position.x = 4;
+    // balls[i].position.z = 4;
 
     balls[i].castShadow = true;
 
@@ -108,7 +112,9 @@ scene.add(light2);
 let light3 = createLight(0xffffff, 1, {x: 0, y: 0, z: 10});
 scene.add(light3);
 
-camera.position.y = 20;
+camera.position.y = 5;
+controls.target.y = camera.position.y;
+camera.position.z = 20;
 
 function animate(time, delta) {
 	requestAnimationFrame(animate);
