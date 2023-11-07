@@ -13,6 +13,8 @@ class ScenaryGenerator{
         let floor = new ShapeGenerator("Box", floorDimensions, materialType, config);
         floor.receiveShadow = true;
         floor.position.y = -0.5;
+        // floor.position.y = 5
+        // floor.rotation.z = Math.PI/6;
 
         let walls = new Array(4);
 

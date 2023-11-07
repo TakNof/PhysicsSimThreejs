@@ -68,12 +68,6 @@ class ScenePhysics{
                 if(this.config.bounce && (this.items[i].physics || this.items[j].physics)){
                     let index = this.checkCollisionByType(this.items[i], this.items[j]);
                     let collisionType = this.allCollisions(index);
-                    // if(index == 2){
-                    //     this[collisionType](this.items[j], this.items[i]);
-                    // }else{
-                    //     this[collisionType](this.items[i], this.items[j]);
-                    // }
-
                     if(this.items[j].physics){
                         this[collisionType](this.items[j], this.items[i]);
                     }else{
@@ -164,10 +158,11 @@ class ScenePhysics{
             for(let [i, axis] of ["x", "y", "z"].entries()){
                 if(face.normal[axis] != 0 && collisions[i]){
                     console.log(`Sphere colliding with box: ${item1.shape} ${item2.shape}`);
-                    item1.physics.config.velocityVector[axis] *= -(Math.abs(face.normal[axis]) - this.config.energyLoss);
+                    item1.physics.config.velocityVector[axis] *= -(Math.abs(face.normal[axis]) - this.config.energyLoss)*Math.cos(item2.rotation[this.complementaryAxels[this.axles.indexOf(axis)]]);
 
                     if(axis == "y" && face.normal.y > 0){
-                        item1.position.y = item2.position.y + item2.geometry.parameters.height/2 + item1.geometry.parameters.radius;
+                        // item1.position.y = item2.position.y + item2.geometry.parameters.height/2 + item1.geometry.parameters.radius;
+                        item1.position.y = item2.position.y + item1.position.x*Math.tan(item2.rotation[this.complementaryAxels[this.axles.indexOf("x")]]) + item2.geometry.parameters.height/2 + item1.geometry.parameters.radius;
                     }
                 }
             }
@@ -188,9 +183,9 @@ class ScenePhysics{
                     console.log(`Box colliding with box: ${item1.shape} ${item2.shape}`);
                     item1.physics.config.velocityVector[axis] *= -(Math.abs(face.normal[axis]) - this.config.energyLoss);
 
-                    if(axis == "y" && face.normal.y != 0){
-                        item1.position.y = item2.position.y + item2.geometry.parameters.height/2 + item1.geometry.parameters.height/2;
-                    }
+                        if(axis == "y" && face.normal.y > 0){
+                            item1.position.y = item2.position.y + item2.geometry.parameters.height/2 + item1.geometry.parameters.height/2;
+                        }
                 }
             }
         }
@@ -199,15 +194,17 @@ class ScenePhysics{
     boxAxisCollisionBounds(item1, item2, axis){
         let deltaAxisAbs = Math.abs(item1.position[axis] - item2.position[axis]);
         if(item1.shape == "Sphere"){
-            return this.#roundDecimals(deltaAxisAbs) - this.#roundDecimals(item1.geometry.parameters.radius + item2.geometry.parameters[this.checkProperty(axis)]/2) <= 0;
+            let raycaster = new THREE.Raycaster();
+            raycaster.set(item1.position, item1.physics.config.velocityVector.clone().normalize());
+            let intersects = raycaster.intersectObject(item2);
+
+            return intersects.length > 0 && (intersects[0].distance - item1.geometry.parameters.radius)*0.9 <= 0;
         }
 
         if(item1.shape == "Box"){
             return this.#roundDecimals(deltaAxisAbs) - this.#roundDecimals(item1.geometry.parameters[this.checkProperty(axis)]/2 + item2.geometry.parameters[this.checkProperty(axis)]/2) <= 0;
         }
-        
-        
-    }
+    }   
     
     boxGeneralCollisionBounds(item1, item2){
         let collisionCourse = true;

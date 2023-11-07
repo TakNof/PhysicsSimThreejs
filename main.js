@@ -41,7 +41,7 @@ scene.background = new THREE.CubeTextureLoader()
         '6.png'
 	]);
 
-let scenePhysics = new ScenePhysics(scene, {viewMovementHelper: true, energyLoss: 0.2});
+let scenePhysics = new ScenePhysics(scene, {friction: true, energyLoss: 0.2, viewMovementHelper: true});
 
 let colours = [0x03cffc, 0x09ff00, 0xff8800, 0xff00e1];
 
@@ -49,18 +49,15 @@ let playAnimation = false;
 
 let timeDivision = 1000;
 
-let ballYo = 10;
+let ballYo = 9;
 
-let balls = new Array(5);
+let balls = new Array(10);
 for(let i = 0; i < balls.length; i++){
     balls[i] = new ShapeGenerator("Sphere", [0.5, 32, 32], "Standard", {color: colours[rand(0, colours.length - 1)], roughness: 0});
     balls[i].position.y = ballYo + rand(0, 6);
     balls[i].position.x = rand(0, 4);
     balls[i].position.z = rand(-4, 0);
 
-    // balls[i].position.y = ballYo + i;
-    // balls[i].position.x = 4;
-    // balls[i].position.z = 4;
 
     balls[i].castShadow = true;
 
@@ -70,8 +67,6 @@ for(let i = 0; i < balls.length; i++){
 }
 
 let room = new ScenaryGenerator([10,2,10], 15, "Standard", {color: colours[rand(0, colours.length-1)], transparent: true, opacity: 0.5, side: THREE.DoubleSide})
-
-scene.add(...room.items);
 
 let stairs = new Array(4);
 let startPoint = 7;
@@ -96,12 +91,14 @@ for(let i = 0; i < stairs.length; i++){
     stairs[i].position.y = startPoint - i*dimensions[1];
     stairs[i].position.x = 2.5*side2;
     stairs[i].position.z = 2.5*side2*side;
-    scene.add(stairs[i]);
 }
 
 let scenary = [...room.items, ...stairs];
+// let scenary = [...room.items];
 
 scenePhysics.add(...scenary, ...balls);
+
+scene.add(...scenary);
 
 let light = createLight(0xffffff, 1, {x: -10, y: 10, z: 0});
 scene.add(light);
