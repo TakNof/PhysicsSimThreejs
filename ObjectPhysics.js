@@ -51,7 +51,11 @@ class ObjectPhysics{
 
         if(this.scene.children.length > 0 && intersect.length > 0){
             distanceToGround = intersect[0].distance;
-            this.config.energy.Potential = -this.config.mass*Math.abs(distanceToGround - this.object.geometry.parameters.radius)*this.config.gravity;
+            if(this.object.shape == "Sphere"){
+                this.config.energy.Potential = -this.config.mass*Math.abs(distanceToGround - this.object.geometry.parameters.radius)*this.config.gravity;
+            }else if(this.object.shape == "Box"){
+                this.config.energy.Potential = -this.config.mass*Math.abs(distanceToGround - this.object.geometry.parameters.height)*this.config.gravity;
+            }
         }else{
             this.config.energy.Potential = Infinity;
         }

@@ -45,7 +45,7 @@ let scenePhysics = new ScenePhysics(scene, {friction: true, energyLoss: 0.2, vie
 
 let colours = [0x03cffc, 0x09ff00, 0xff8800, 0xff00e1];
 
-let playAnimation = false;
+let playAnimation = true;
 
 let timeDivision = 1000;
 
